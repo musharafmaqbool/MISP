@@ -1679,6 +1679,7 @@ class Server extends AppModel
                     return $leafValue;
                 }
             }
+
             if (!empty($leafValue['test'])) {
                 if ($leafValue['test'] instanceof Closure) {
                     $result = $leafValue['test']($setting);
@@ -1690,6 +1691,8 @@ class Server extends AppModel
                     if ($result !== false) {
                         $leafValue['errorMessage'] = $result;
                     }
+                } else {
+                    $leafValue['errorMessage'] = null;
                 }
             }
             if (isset($leafValue['optionsSource'])) {
@@ -2326,7 +2329,7 @@ class Server extends AppModel
     public function correlationAfterHook($setting, $value)
     {
         if (!Configure::read('MISP.background_jobs')) {
-            $this->Attribute = ClassRegistry::init('Attribute');
+            $this->Attribute = ClassRegistry::init('MispAttribute');
             if ($value) {
                 $this->Attribute->purgeCorrelations();
             } else {
@@ -4125,7 +4128,7 @@ class Server extends AppModel
             $extensions = [];
             $dependencies = [];
             foreach ($composer['require'] as $require => $foo) {
-                if (substr($require, 0, 4) === 'ext-') {
+                if (str_starts_with($require, 'ext-')) {
                     $extensions[substr($require, 4)] = true;
                 }
                 else if (mb_strpos($require, '/') !== false) {  // external dependencies have namespaces, so a /
@@ -4133,7 +4136,7 @@ class Server extends AppModel
                 }
             }
             foreach ($composer['suggest'] as $suggest => $reason) {
-                if (substr($suggest, 0, 4) === 'ext-') {
+                if (str_starts_with($suggest, 'ext-')) {
                     $extensions[substr($suggest, 4)] = $reason;
                 }
                 else if (mb_strpos($suggest, '/') !== false) {  // external dependencies have namespaces, so a /
@@ -5058,7 +5061,7 @@ class Server extends AppModel
     public function getAllTypes(): array
     {
         $allTypes = [];
-        $this->Attribute = ClassRegistry::init('Attribute');
+        $this->Attribute = ClassRegistry::init('MispAttribute');
         $this->ObjectTemplate = ClassRegistry::init('ObjectTemplate');
         $objects = $this->ObjectTemplate->find('all', [
             'recursive' => -1,
@@ -6865,6 +6868,14 @@ class Server extends AppModel
                 'username_in_response_header' => [
                     'level' => self::SETTING_OPTIONAL,
                     'description' => __('When enabled, logged in username will be included in X-Username HTTP response header. This is useful for request logging on webserver/proxy side.'),
+                    'value' => false,
+                    'test' => 'testBool',
+                    'type' => 'boolean',
+                    'null' => true
+                ],
+                'user_org_uuid_in_response_header' => [
+                    'level' => self::SETTING_OPTIONAL,
+                    'description' => __('When enabled, logged in user\'s organisation uuid will be included in X-UserOrgUUID HTTP response header.'),
                     'value' => false,
                     'test' => 'testBool',
                     'type' => 'boolean',

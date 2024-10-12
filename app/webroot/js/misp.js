@@ -2811,7 +2811,7 @@ function freetextSerializeAttributes() {
 
 function freetextImportResultsSubmit(event_id, count) {
     var attributeArray = freetextSerializeAttributes();
-    $("#AttributeJsonObject").val(JSON.stringify(attributeArray));
+    $("#MispAttributeJsonObject").val(JSON.stringify(attributeArray));
     var formData = $(".mainForm").serialize();
     xhr({
         type: "post",
@@ -4083,6 +4083,7 @@ $(document.body).on('mouseenter', '.eventViewAttributeHover', function () {
         currentPopover = '';
     }
     var type = $(this).attr('data-object-type');
+    if (type==='attributes') type = 'Attribute'; // Type translation to expected input for further processing
     var id = $(this).attr('data-object-id');
 
     if (type + "_" + id in ajaxResults["hover"]) {
@@ -5739,7 +5740,6 @@ $(document.body).on('click', '.hex-value-convert', function() {
 
         $.ajax({
             success: function (data) {
-                data = $.parseJSON(data);
                 var tagData;
                 for (var i = 0; i < data.length; i++) {
                     var tag = data[i];

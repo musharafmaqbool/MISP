@@ -33,11 +33,11 @@ class AppController extends Controller
 
     public $helpers = array('OrgImg', 'FontAwesome', 'UserName');
 
-    private $__queryVersion = '163';
-    public $pyMispVersion = '2.4.195';
-    public $phpmin = '7.2';
-    public $phprec = '7.4';
-    public $phptoonew = '8.0';
+    private $__queryVersion = '165';
+    public $pyMispVersion = '2.5.0';
+    public $phpmin = '8.1';
+    public $phprec = '8.2';
+    public $phptoonew = '9.0';
     private $isApiAuthed = false;
 
     /** @var redis */
@@ -108,19 +108,18 @@ class AppController extends Controller
 
     public function beforeFilter()
     {
+        if (Configure::read('MISP.system_setting_db')) {
+            App::uses('SystemSetting', 'Model');
+            SystemSetting::setGlobalSetting();
+        }
+
         // Set the baseurl for redirects
         $baseurl = empty(Configure::read('MISP.baseurl')) ? null : Configure::read('MISP.baseurl');
-        // If external_baseurl is set, let's prefer that instead though
-        $baseurl = empty(Configure::read('MISP.external_baseurl')) ? $baseurl : Configure::read('MISP.external_baseurl');
         if (!empty($baseurl)) {
             Configure::write('App.fullBaseUrl', $baseurl);
             Router::fullBaseUrl($baseurl);
         }
 
-        if (Configure::read('MISP.system_setting_db')) {
-            App::uses('SystemSetting', 'Model');
-            SystemSetting::setGlobalSetting();
-        }
         $this->_setupBaseurl();
         $this->User = ClassRegistry::init('User');
         if (Configure::read('Plugin.Benchmarking_enable')) {
@@ -292,6 +291,12 @@ class AppController extends Controller
                 $this->RestResponse->setHeader('X-Username', $headerValue);
             }
 
+            if (Configure::read('Security.user_org_uuid_in_response_header')) {
+                $userOrgHeaderValue = $user['Organisation']['uuid'];
+                $this->response->header('X-UserOrgUUID', $userOrgHeaderValue);
+                $this->RestResponse->setHeader('X-UserOrgUUID', $userOrgHeaderValue);
+            }
+
             if (!$this->__verifyUser($user))  {
                 $this->_stop(); // just for sure
             }
@@ -413,8 +418,8 @@ class AppController extends Controller
             if (!empty($homepage)) {
                 $this->set('homepage', $homepage);
             }
-            if (PHP_MAJOR_VERSION >= 8) {
-                $this->Flash->error(__('WARNING: MISP is currently running under PHP 8.0, which is unsupported. Background jobs will fail, so please contact your administrator to run a supported PHP version (such as 7.4)'));
+            if (PHP_MAJOR_VERSION < 8) {
+                $this->Flash->error(__('WARNING: MISP 2.5.x is currently running under PHP 7.x, which is unsupported. Make sure that you upgrade to PHP 8.x as soon as possible.'));
             }
         }
     }
@@ -771,7 +776,7 @@ class AppController extends Controller
 
         $shouldBeLogged = $userMonitoringEnabled ||
             Configure::read('MISP.log_paranoid') ||
-            (Configure::read('MISP.log_paranoid_api') && isset($user['logged_by_authkey']) && $user['logged_by_authkey']);
+            (Configure::read('MISP.log_paranoid_api') && isset($user['logged_by_authkey']));
 
         if ($shouldBeLogged) {
             $includeRequestBody = !empty(Configure::read('MISP.log_paranoid_include_post_body')) || $userMonitoringEnabled;
@@ -955,7 +960,7 @@ class AppController extends Controller
     {
         // Let us access $baseurl from all views
         $baseurl = Configure::read('MISP.baseurl');
-        if (substr($baseurl, -1) === '/') {
+        if (str_ends_with($baseurl, '/')) {
             // if the baseurl has a trailing slash, remove it. It can lead to issues with the CSRF protection
             $baseurl = rtrim($baseurl, '/');
             $this->loadModel('Server');
@@ -1060,7 +1065,7 @@ class AppController extends Controller
                     $data = array_merge($data, $temp);
                 } else {
                     foreach ($options['paramArray'] as $param) {
-                        if (substr($param, -1) == '*') {
+                        if (str_ends_with($param, '*')) {
                             $root = substr($param, 0, strlen($param)-1);
                             foreach ($temp as $existingParamKey => $v) {
                                 $leftover = substr($existingParamKey, strlen($param)-1);
@@ -1122,7 +1127,7 @@ class AppController extends Controller
             foreach ($data as $k => $v) {
                 $found = false;
                 foreach ($options['additional_delimiters'] as $delim) {
-                    if (strpos($v, $delim) !== false) {
+                    if (str_contains($v, $delim)) {
                         $found = true;
                         break;
                     }
@@ -1360,11 +1365,19 @@ class AppController extends Controller
         if ($scope === 'MispObject') {
             $scope = 'Object';
         }
+        if ($scope === 'MispAttribute') {
+            $scope = 'Attribute';
+        }
         if (!isset($this->RestSearch->paramArray[$scope])) {
             throw new NotFoundException(__('RestSearch is not implemented (yet) for this scope.'));
         }
-
-        $modelName = $scope === 'Object' ? 'MispObject' : $scope;
+        if ($scope === 'Object') {
+            $modelName = 'MispObject';
+        } else if ($scope === 'Attribute') {
+            $modelName = 'MispAttribute';
+        }else {
+            $modelName = $scope;
+        }
         if (!isset($this->$modelName)) {
             $this->loadModel($modelName);
         }

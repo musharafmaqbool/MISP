@@ -91,7 +91,8 @@ class AppModel extends Model
         105 => false, 106 => false, 107 => false, 108 => false, 109 => false, 110 => false,
         111 => false, 112 => false, 113 => true, 114 => false, 115 => false, 116 => false,
         117 => false, 118 => false, 119 => false, 120 => false, 121 => false, 122 => false,
-        123 => false, 124 => false, 125 => false, 126 => false, 127 => false, 128 => false
+        123 => false, 124 => false, 125 => false, 126 => false, 127 => false, 128 => false,
+        129 => false, 130 => false
     );
 
     const ADVANCED_UPDATES_DESCRIPTION = array(
@@ -2211,6 +2212,13 @@ class AppModel extends Model
                     INDEX `name` (`name`),
                     INDEX `selector_type` (`selector_type`)
                   ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;';
+                  break;
+            case 129:
+                $sqlArray[] = "ALTER TABLE `bookmarks` ADD `comment` TEXT CHARACTER SET utf8 COLLATE utf8_unicode_ci;";
+                break;
+            case 130:
+                // change bookmarks' table's comment field to utf8_mb4
+                $sqlArray[] = "ALTER TABLE `bookmarks` MODIFY `comment` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
                 break;
             case 'fixNonEmptySharingGroupID':
                 $sqlArray[] = 'UPDATE `events` SET `sharing_group_id` = 0 WHERE `distribution` != 4;';
@@ -3121,7 +3129,7 @@ class AppModel extends Model
 
     private function removeDuplicateAttributeUUIDs()
     {
-        $this->Attribute = ClassRegistry::init('Attribute');
+        $this->Attribute = ClassRegistry::init('MispAttribute');
         $this->Log = ClassRegistry::init('Log');
         $duplicates = $this->Attribute->find('all', array(
             'fields' => array('Attribute.uuid', 'count(Attribute.uuid) as occurrence'),
@@ -3505,7 +3513,7 @@ class AppModel extends Model
     }
 
     // take filters in the {"OR" => [foo], "NOT" => [bar]} format along with conditions and set the conditions
-    public function generic_add_filter($conditions, &$filter, $keys)
+    public function generic_add_filter($conditions, &$filter, $keys, $conditional_for_filter = null)
     {
         $operator_composition = array(
             'NOT' => 'AND',
@@ -3550,13 +3558,26 @@ class AppModel extends Model
                             if ($operator === 'NOT') {
                                 $temp[$key . ' !='][] = $f;
                             } else {
-                                $temp['OR'][$key][] = $f;
+                                $temp['OR'][$key . ' IN'][] = $f;
                             }
                         }
                     }
                 }
             }
-            $conditions['AND'][] = array($operator_composition[$operator] => $temp);
+            if (!empty($conditional_for_filter)) {
+                $conditions['AND'][] = [
+                    'OR' => [
+                        $conditional_for_filter,
+                        [
+                            $operator_composition[$operator] => $temp
+                        ]
+                    ]
+                ];
+            } else {
+                $conditions['AND'][] = [
+                    $operator_composition[$operator] => $temp
+                ];
+            }
             if ($operator !== 'NOT') {
                 unset($filter[$operator]);
             }
@@ -3593,14 +3614,14 @@ class AppModel extends Model
             $temp = array();
             foreach ($filter as $param) {
                 $paramString = strval($param);
-                if (!empty($paramString)) {
+                if (!empty($paramString) && !is_int($param)) {
                     if ($paramString[0] === '!') {
                         $temp['NOT'][] = substr($paramString, 1);
                     } else {
                         $temp['OR'][] = $paramString;
                     }
                 } else if (isset($param)) {
-                    $temp['OR'][] = strval($param);
+                    $temp['OR'][] = $param;
                 }
             }
             $filter = $temp;
@@ -3783,7 +3804,8 @@ class AppModel extends Model
             $keyPath = explode('.', $query['list']['keyPath']);
             $valuePath = explode('.', $query['list']['valuePath']);
             if ($keyPath[1] === $valuePath[1]) { // same model
-                return array_column(array_column($results, $keyPath[1]), $valuePath[2], $keyPath[2]);
+                $results = array_column($results, $keyPath[1]);
+                return array_column($results, $valuePath[2], $keyPath[2]);
             }
         }
 
@@ -3802,7 +3824,7 @@ class AppModel extends Model
     {
         if ($state === 'before') {
             if (isset($query['fields']) && is_array($query['fields']) && count($query['fields']) === 1) {
-                if (strpos($query['fields'][0], '.') === false) {
+                if (!str_contains($query['fields'][0], '.')) {
                     $query['fields'][0] = $this->alias . '.' . $query['fields'][0];
                 }
 
@@ -3944,7 +3966,7 @@ class AppModel extends Model
                 }
             }
 
-            if (strpos($field, '.') === false) {
+            if (!str_contains($field, '.')) {
                 unset($fields[$field]);
                 $fields[$this->alias . '.' . $field] = $value;
             }
@@ -4136,7 +4158,7 @@ class AppModel extends Model
             ];
         }
         $this->Correlation = ClassRegistry::init('Correlation');
-        $this->Attribute = ClassRegistry::init('Attribute');
+        $this->Attribute = ClassRegistry::init('MispAttribute');
         if (!Configure::read('MISP.background_jobs')) {
             $this->Correlation->truncate($user, 'Legacy');
             $this->Attribute->generateCorrelation();

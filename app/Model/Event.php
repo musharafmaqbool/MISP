@@ -8,7 +8,7 @@ App::uses('ProcessTool', 'Tools');
 
 /**
  * @property User $User
- * @property Attribute $Attribute
+ * @property MispAttribute $Attribute
  * @property MispObject $Object
  * @property EventReport $EventReport
  * @property ShadowAttribute $ShadowAttribute
@@ -293,7 +293,7 @@ class Event extends AppModel
 
     public $hasMany = array(
         'Attribute' => array(
-            'className' => 'Attribute',
+            'className' => 'MispAttribute',
             'foreignKey' => 'event_id',
             'dependent' => true,    // cascade deletes
             'conditions' => '',
@@ -798,7 +798,7 @@ class Event extends AppModel
         foreach ($objects as $object) {
             // Workaround for different structure in XML/array than what CakePHP expects
             if (isset($data['Event'][$object]) && is_array($data['Event'][$object]) && count($data['Event'][$object])) {
-                if (!is_numeric(implode(array_keys($data['Event'][$object]), ''))) {
+                if (!is_numeric(implode('', array_keys($data['Event'][$object])))) {
                     // single attribute
                     $data['Event'][$object] = array(0 => $data['Event'][$object]);
                 }
@@ -928,7 +928,8 @@ class Event extends AppModel
                 throw new Exception("This should never happen.");
             }
 
-            $serverSync->pushEvent($event)->json();
+            $response = $serverSync->pushEvent($event)->json();
+            $serverSync->debug("Pushed event '{$event['Event']['uuid']}' to remote server as event with remote ID {$response['Event']['id']}");
         } catch (Crypt_GPG_KeyNotFoundException $e) {
             $errorMessage = sprintf(
                 'Could not push event %s to remote server #%s. Reason: %s',
@@ -1623,7 +1624,7 @@ class Event extends AppModel
             $find_params['fields'] = array('Event.id', 'Event.attribute_count');
             $results = $this->find('list', $find_params);
         } else {
-            $find_params['fields'] = array('Event.id');   
+            $find_params['fields'] = array('Event.id');
             $results = $this->find('column', $find_params);
         }
         if (!isset($params['limit'])) {
@@ -2816,14 +2817,20 @@ class Event extends AppModel
 
     public function set_filter_deleted(&$params, $conditions, $options)
     {
+        $conditional_for_filter = null;
         if (isset($params['deleted'])) {
             if (empty($options['scope'])) {
                 $scope = 'Attribute';
             } else {
+                if ($options['scope'] === 'Object') {
+                    $conditional_for_filter = [
+                        'Attribute.object_id' => 0
+                    ];
+                }
                 $scope = $options['scope'];
             }
             $deleted = $this->convert_filters($params['deleted']);
-            $conditions = $this->generic_add_filter($conditions, $deleted, $scope . '.deleted');
+            $conditions = $this->generic_add_filter($conditions, $deleted, $scope . '.deleted', $conditional_for_filter);
         }
         return $conditions;
     }
@@ -3682,24 +3689,24 @@ class Event extends AppModel
     {
         $event = $this->updatedLockedFieldForAnalystData($event, 'Event');
         if (!empty($event['Event']['Attribute'])) {
-            for ($i=0; $i < count($event['Event']['Attribute']); $i++) { 
+            for ($i=0; $i < count($event['Event']['Attribute']); $i++) {
                 $event['Event']['Attribute'][$i] = $this->updatedLockedFieldForAnalystData($event['Event']['Attribute'][$i]);
             }
         }
         if (!empty($event['Event']['Object'])) {
-            for ($i=0; $i < count($event['Event']['Object']); $i++) { 
+            for ($i=0; $i < count($event['Event']['Object']); $i++) {
                  if (isset($event['Event']['Object'][$i])) {
                     $event['Event']['Object'][$i] = $this->updatedLockedFieldForAnalystData($event['Event']['Object'][$i]);
                 }
                 if (!empty($event['Event']['Object'][$i])) {
-                    for ($j=0; $j < count($event['Event']['Object'][$i]['Attribute']); $j++) { 
+                    for ($j=0; $j < count($event['Event']['Object'][$i]['Attribute']); $j++) {
                         $event['Event']['Object'][$i]['Attribute'][$j] = $this->updatedLockedFieldForAnalystData($event['Event']['Object'][$i]['Attribute'][$j]);
                     }
                 }
             }
         }
         if (!empty($event['Event']['EventReport'])) {
-            for ($i=0; $i < count($event['Event']['EventReport']); $i++) { 
+            for ($i=0; $i < count($event['Event']['EventReport']); $i++) {
                 $event['Event']['EventReport'][$i] = $this->updatedLockedFieldForAnalystData($event['Event']['EventReport'][$i]);
             }
         }
@@ -3714,7 +3721,7 @@ class Event extends AppModel
         }
         foreach ($this->AnalystData::ANALYST_DATA_TYPES as $type) {
             if (!empty($data[$type])) {
-                for ($i=0; $i < count($data[$type]); $i++) { 
+                for ($i=0; $i < count($data[$type]); $i++) {
                     $data[$type][$i]['locked'] = true;
                     foreach ($this->AnalystData::ANALYST_DATA_TYPES as $childType) {
                         if (!empty($data[$type][$i][$childType])) {
@@ -3833,9 +3840,12 @@ class Event extends AppModel
         }
         unset($data['Event']['id']);
         if (
-            (Configure::read('MISP.block_publishing_for_same_creator', false) && !$user['Role']['perm_sync']) ||
+            (Configure::read('MISP.block_publishing_for_same_creator') && !$user['Role']['perm_sync']) ||
             (isset($data['Event']['published']) && $data['Event']['published'] && $user['Role']['perm_publish'] == 0)
         ) {
+            if (isset($data['Event']['published']) && $data['Event']['published']) {
+                $this->loadLog()->createLogEntry($user, 'add', 'Event', 0, 'Event will not be published');
+            }
             $data['Event']['published'] = 0;
         }
         if (isset($data['Event']['uuid'])) {
@@ -4732,7 +4742,7 @@ class Event extends AppModel
             'recursive' => -1,
             'conditions' => array('Event.id' => $id)
         ));
-        
+
         if (empty($event)) {
             return false;
         }
@@ -4781,7 +4791,7 @@ class Event extends AppModel
             $success = $this->executeTrigger('event-publish', $fullEvent[0], $workflowErrors, $logging);
             if (empty($success)) {
                 $errorMessage = implode(', ', $workflowErrors);
-                
+
                 return $errorMessage;
             }
         }
@@ -5061,8 +5071,8 @@ class Event extends AppModel
             /* TypeGroupings */
             if (
                 $filterType['attributeFilter'] !== 'all'
-                && isset(Attribute::TYPE_GROUPINGS[$filterType['attributeFilter']])
-                && !in_array($attribute['type'], Attribute::TYPE_GROUPINGS[$filterType['attributeFilter']], true)
+                && isset(MispAttribute::TYPE_GROUPINGS[$filterType['attributeFilter']])
+                && !in_array($attribute['type'], MispAttribute::TYPE_GROUPINGS[$filterType['attributeFilter']], true)
             ) {
                 return null;
             }
@@ -5165,8 +5175,8 @@ class Event extends AppModel
             /* TypeGroupings */
             if (
                 $filterType['attributeFilter'] !== 'all'
-                && isset(Attribute::TYPE_GROUPINGS[$filterType['attributeFilter']])
-                && !in_array($proposal['type'], Attribute::TYPE_GROUPINGS[$filterType['attributeFilter']], true)
+                && isset(MispAttribute::TYPE_GROUPINGS[$filterType['attributeFilter']])
+                && !in_array($proposal['type'], MispAttribute::TYPE_GROUPINGS[$filterType['attributeFilter']], true)
             ) {
                 return null;
             }
@@ -6295,7 +6305,7 @@ class Event extends AppModel
         }
     }
 
-    public function enrichment($params)
+    public function enrichment(array $params)
     {
         $option_fields = array('user', 'event_id', 'modules');
         foreach ($option_fields as $option_field) {
@@ -6303,7 +6313,6 @@ class Event extends AppModel
                 throw new MethodNotAllowedException(__('%s not set', $option_field));
             }
         }
-        $event = [];
         if (!empty($params['attribute_uuids'])) {
             $attributes = $this->Attribute->fetchAttributes($params['user'], [
                 'conditions' => [
@@ -6323,13 +6332,16 @@ class Event extends AppModel
                 'includeAttachments' => 1,
                 'flatten' => 1,
             ]);
+            if (empty($event)) {
+                throw new MethodNotAllowedException('Invalid event.');
+            }
         }
+
         $this->Module = ClassRegistry::init('Module');
         $enabledModules = $this->Module->getEnabledModules($params['user']);
         if (empty($enabledModules) || is_string($enabledModules)) {
             return true;
         }
-        $options = array();
         foreach ($enabledModules['modules'] as $k => $temp) {
             if (isset($temp['meta']['config'])) {
                 $settings = array();
@@ -6339,9 +6351,7 @@ class Event extends AppModel
                 $enabledModules['modules'][$k]['config'] = $settings;
             }
         }
-        if (empty($event)) {
-            throw new MethodNotAllowedException('Invalid event.');
-        }
+
         $attributes_added = 0;
         $initial_objects = array();
         $event_id = $event[0]['Event']['id'];
@@ -6357,7 +6367,7 @@ class Event extends AppModel
                         if (!empty($module['config'])) {
                             $data['config'] = $module['config'];
                         }
-                        if (!empty($module['mispattributes']['format']) && $module['mispattributes']['format'] == 'misp_standard') {
+                        if (!empty($module['mispattributes']['format']) && $module['mispattributes']['format'] === 'misp_standard') {
                             $data['attribute'] = $attribute;
                         } else {
                             $data[$attribute['type']] = $attribute['value'];
@@ -6372,12 +6382,11 @@ class Event extends AppModel
                             throw new MethodNotAllowedException(h($module['name']) . ' service not reachable.');
                         } else if (!is_array($result)) {
                             continue 2;
+                        } else if (!isset($result['results'])) {
+                            throw new RuntimeException("Invalid response received from module {$module['name']}, response data do not contains results field.");
                         }
                         //if (isset($result['error'])) $this->Session->setFlash($result['error']);
-                        if (!is_array($result)) {
-                            throw new Exception($result);
-                        }
-                        if (!empty($module['mispattributes']['format']) && $module['mispattributes']['format'] == 'misp_standard') {
+                        if (!empty($module['mispattributes']['format']) && $module['mispattributes']['format'] === 'misp_standard') {
                             if ($object_id != '0' && !empty($initial_objects[$object_id])) {
                                 $result['initialObject'] = $initial_objects[$object_id];
                             }
@@ -6433,7 +6442,7 @@ class Event extends AppModel
                 }
                 $dataTag['Tag']['local'] = empty($dataTag['local']) ? false : true;
                 if (!isset($excludeGalaxy) || !$excludeGalaxy) {
-                    if (substr($dataTag['Tag']['name'], 0, strlen('misp-galaxy:')) === 'misp-galaxy:') {
+                    if (str_starts_with($dataTag['Tag']['name'], 'misp-galaxy:')) {
                         $cluster = $this->GalaxyCluster->getCluster($dataTag['Tag']['name'], $user);
                         if ($cluster) {
                             $found = false;
@@ -7493,7 +7502,7 @@ class Event extends AppModel
         if (!empty($exportTool->additional_params)) {
             $filters = array_merge($filters, $exportTool->additional_params);
         }
-        
+
         $exportToolParams = array(
             'user' => $user,
             'params' => array(),
