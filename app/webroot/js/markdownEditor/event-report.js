@@ -1353,7 +1353,7 @@ function toggleSuggestionInterface(enabled) {
         setEditorData(originalRaw)
         $('#editor-subcontainer').show()
         $suggestionContainer.hide()
-        $mardownViewerToolbar.find('.btn-group:first button').css('visibility', 'visible')
+        $markdownViewerToolbar.find('.btn-group:first button').css('visibility', 'visible')
         $('#suggestionCloseButton').remove()
         cm.refresh()
     }
@@ -2271,7 +2271,7 @@ function constructContextReplacementTable(unreferencedContext) {
 }
 
 function addCloseSuggestionButtonToToolbar() {
-    var $toolbarMode = $mardownViewerToolbar.find('.btn-group:first')
+    var $toolbarMode = $markdownViewerToolbar.find('.btn-group:first')
     if ($toolbarMode.find('#suggestionCloseButton').length == 0) {
         $toolbarMode.find('button').css('visibility', 'hidden')
         var $closeButton = $('<button id="suggestionCloseButton" type="button"/>').addClass('btn btn-danger').css({
