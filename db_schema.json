@@ -10571,6 +10571,10 @@
             "id": true,
             "tag_id": false
         },
+        "event_report_template_variables": {
+            "id": true,
+            "name": false
+        },
         "event_tags": {
             "event_id": false,
             "id": true,

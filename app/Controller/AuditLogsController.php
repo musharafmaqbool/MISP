@@ -36,6 +36,8 @@ class AuditLogsController extends AppController
         'Server',
         'ShadowAttribute',
         'SharingGroup',
+        'SharingGroupBlueprint',
+        'SharingGroupOrg',
         'SystemSetting',
         'Tag',
         'TagCollection',
@@ -490,8 +492,8 @@ class AuditLogsController extends AppController
         }
 
         if (isset($models['Attribute'])) {
-            $this->loadModel('Attribute');
-            $attributes = $this->Attribute->fetchAttributesSimple($user, [
+            $this->loadModel('MispAttribute');
+            $attributes = $this->MispAttribute->fetchAttributesSimple($user, [
                 'conditions' => ['Attribute.id' => array_unique($models['Attribute'])],
                 'fields' => ['Attribute.id', 'Attribute.event_id', 'Attribute.uuid', 'Attribute.deleted'],
             ]);
