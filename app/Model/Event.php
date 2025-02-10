@@ -3727,8 +3727,10 @@ class Event extends AppModel
                     $event['Event']['Object'][$i] = $this->updatedLockedFieldForAnalystData($event['Event']['Object'][$i]);
                 }
                 if (!empty($event['Event']['Object'][$i])) {
-                    for ($j=0; $j < count($event['Event']['Object'][$i]['Attribute']); $j++) {
-                        $event['Event']['Object'][$i]['Attribute'][$j] = $this->updatedLockedFieldForAnalystData($event['Event']['Object'][$i]['Attribute'][$j]);
+                    if (!empty($event['Event']['Object'][$i]['Attribute'])) {
+                        for ($j=0; $j < count($event['Event']['Object'][$i]['Attribute']); $j++) {
+                            $event['Event']['Object'][$i]['Attribute'][$j] = $this->updatedLockedFieldForAnalystData($event['Event']['Object'][$i]['Attribute'][$j]);
+                        }
                     }
                 }
             }
