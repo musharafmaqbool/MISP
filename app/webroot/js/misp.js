@@ -3676,6 +3676,51 @@ function testConnection(id) {
     })
 }
 
+function testSyncRule(id, method) {
+    var resultContainer = $("#sync_rule_" + method + "_test_" + id);
+    console.log(resultContainer);
+    
+    $.ajax({
+        url: baseurl + '/servers/testSyncRules/' + id + '/' + method,
+        type: 'GET',
+        beforeSend: function () {
+            resultContainer.text('Running test...');
+        },
+        error: function () {
+            resultContainer.html('<span class="red bold">Internal error</span>');
+        },
+        success: function (response) {
+            resultContainer.empty();
+            if (typeof response !== 'object') {
+                resultContainer.html('<span class="red bold">Internal error</span>');
+            } else if ("error" in response) {
+                resultContainer.append(
+                    $('<span>')
+                        .attr('class', 'red bold')
+                        .text('Error')
+                ).append(
+                    $('<span>')
+                        .text(': #' + response.error)
+                );
+            } else {
+                Object.keys(response).forEach(function (key) {
+                    var value = response[key];
+                    resultContainer.append(
+                        $('<span>')
+                            .attr('class', 'blue bold')
+                            .text(key)
+                    ).append(
+                        $('<span>')
+                            .text(': ' + value)
+                    ).append(
+                        $('<br>')
+                    );
+                });
+            }
+        }
+    });
+}
+
 function getTextColour(hex) {
     hex = hex.slice(1);
     var r = parseInt(hex.substring(0,2), 16);
