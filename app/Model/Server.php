@@ -1347,11 +1347,11 @@ class Server extends AppModel
      * @param array $events
      * @return array|false
      */
-    private function getEventIdsForPush(array $server, ServerSyncTool $serverSync, array $events)
+    private function getEventIdsForPush(array $server, ServerSyncTool $serverSync, array $events, $ignoreFilterRules = false)
     {
         $request = [];
         foreach ($events as $event) {
-            if (empty($this->eventFilterPushableServers($event, [$server]))) {
+            if (!$ignoreFilterRules && empty($this->eventFilterPushableServers($event, [$server]))) {
                 continue;
             }
             $request[] = ['Event' => [
@@ -2811,12 +2811,13 @@ class Server extends AppModel
      */
     public function runTestSyncRules($id, $method): array
     {
-        $result = [];
-
-
+        $results = [];
         $server = $this->find('first', array(
             'conditions' => array('Server.id' => $id),
-            'recursive' => -1
+            'contain' => [
+                'RemoteOrg' => ['fields' => ['RemoteOrg.id', 'RemoteOrg.uuid', 'RemoteOrg.name']]
+            ],
+            'recursive' => -1,
         ));
         if (empty($server)) {
             return null; // server not found
@@ -2825,10 +2826,13 @@ class Server extends AppModel
         $serverSync = new ServerSyncTool($server, $this->setupSyncRequest($server));
 
         try {
+            $eventArrayWithRules = '?';
+            $eventArrayWithoutRules = '?';
             if ($method == 'pull') {
                 $eventArrayWithRules = $this->getEventIndexFromServer($serverSync, false);
                 $eventArrayWithoutRules = $this->getEventIndexFromServer($serverSync, true);
             } else {
+                $this->Event = ClassRegistry::init('Event');
                 $eventid_conditions_key = 'Event.id >';
                 $eventid_conditions_value = 0;
                 $sgs = $this->Event->SharingGroup->find('all', [
@@ -2846,35 +2850,36 @@ class Server extends AppModel
                 }
                 $tableName = $this->Event->EventReport->table;
                 $eventReportQuery = sprintf('EXISTS (SELECT id, deleted FROM %s WHERE %s.event_id = Event.id and %s.deleted = 0)', $tableName, $tableName, $tableName);
-                $findParams = array(
-                    'conditions' => array(
+                $findParams = [
+                    'conditions' => [
                         $eventid_conditions_key => $eventid_conditions_value,
                         'Event.published' => 1,
-                        'OR' => array(
-                            array('Event.attribute_count >' => 0),
-                            array($eventReportQuery),
-                        ),
-                        'OR' => array(
-                            array(
-                                'AND' => array(
-                                    array('Event.distribution >' => 0),
-                                    array('Event.distribution <' => 4),
-                                ),
-                            ),
-                            array(
-                                'AND' => array(
+                        'OR' => [
+                            ['Event.attribute_count >' => 0],
+                            [$eventReportQuery],
+                        ],
+                        'OR' => [
+                            [
+                                'AND' => [
+                                    ['Event.distribution >' => 0],
+                                    ['Event.distribution <' => 4],
+                                ],
+                            ],
+                            [
+                                'AND' => [
                                     'Event.distribution' => 4,
                                     'Event.sharing_group_id' => $sgIds
-                                ),
-                            )
-                        )
-                    ), // array of conditions
-                    'recursive' => -1, //int
-                    'contain' => array('EventTag' => array('fields' => array('EventTag.tag_id'))),
-                    'fields' => array('Event.id', 'Event.timestamp', 'Event.sighting_timestamp', 'Event.uuid', 'Event.orgc_id'), // array of field names
-                );
+                                ],
+                            ]
+                        ]
+                    ],
+                    'recursive' => -1,
+                    'contain' => ['EventTag' => ['fields' => ['EventTag.tag_id']]],
+                    'fields' => ['Event.id', 'Event.timestamp', 'Event.sighting_timestamp', 'Event.uuid', 'Event.orgc_id'],
+                ];
                 $eventIds = $this->Event->find('all', $findParams);
-                $eventArrayWithoutRules = $this->getEventIdsForPush($server, $serverSync, $eventIds);
+                $eventArrayWithRules = $this->getEventIdsForPush($server, $serverSync, $eventIds, false);
+                $eventArrayWithoutRules = $this->getEventIdsForPush($server, $serverSync, $eventIds, true);
             }
 
             $results = [
@@ -2890,7 +2895,7 @@ class Server extends AppModel
             $this->loadLog()->createLogEntry('SYSTEM', 'error', 'Server', $id, 'Error: ' . $message);
             return ['error' => $message];
         }
-        return $result;
+        return $results;
     }
 
     /**

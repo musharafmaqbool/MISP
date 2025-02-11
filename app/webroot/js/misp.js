@@ -3678,8 +3678,6 @@ function testConnection(id) {
 
 function testSyncRule(id, method) {
     var resultContainer = $("#sync_rule_" + method + "_test_" + id);
-    console.log(resultContainer);
-    
     $.ajax({
         url: baseurl + '/servers/testSyncRules/' + id + '/' + method,
         type: 'GET',
@@ -3703,19 +3701,19 @@ function testSyncRule(id, method) {
                         .text(': #' + response.error)
                 );
             } else {
-                Object.keys(response).forEach(function (key) {
-                    var value = response[key];
-                    resultContainer.append(
+                resultText = response.without_rules - response.with_rules
+                if (resultText != 0) {
+                    resultText += ' (' + (((response.without_rules - response.with_rules) / response.without_rules) * 100).toFixed(1) + '%' + ')'
+                }
+                resultContainer.append(
+                    $('<div>').css({'text-wrap': 'nowrap'}).append(
                         $('<span>')
                             .attr('class', 'blue bold')
-                            .text(key)
-                    ).append(
+                            .text('# Filtered Events'),
                         $('<span>')
-                            .text(': ' + value)
-                    ).append(
-                        $('<br>')
-                    );
-                });
+                            .text(': ' + resultText)
+                    )
+                )
             }
         }
     });
