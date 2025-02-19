@@ -3974,6 +3974,9 @@ class Event extends AppModel
                 'conditions' => array('Event.id' => $this->id),
                 'recursive' => -1
             ));
+
+            $this->dedupAttributesForCorrelation($data);
+
             if (!empty($data['Event']['Attribute'])) {
                 $attributeHashes = [];
                 foreach ($data['Event']['Attribute'] as $attribute) {
@@ -4089,6 +4092,62 @@ class Event extends AppModel
             $validationErrors['Event'] = $this->validationErrors;
             return json_encode($validationErrors);
         }
+    }
+
+    private function addAttributeToCorrelationDedupTable(array &$value_table, int|null $object_id, int $attribute_id, array $attribute, array $compositeTypes): void
+    {
+        $values = [];
+        // we need to build our little internal value table with composite types in mind
+        if (in_array($attribute['type'], $compositeTypes)) {
+            $values = explode('|', $attribute['value']);
+        } else {
+            $values = [$attribute['value']];
+        }
+        foreach ($values as $value) {
+            $value = hash('sha256', $attribute['value']);
+            if (!isset($value_table[$value])) {
+                $value_table[$value] = [['o' => $object_id, 'a' => $attribute_id]];
+            } else {
+                $value_table[$value][] = ['o' => $object_id, 'a' => $attribute_id];
+            }
+        }
+    }
+
+    // deduplicate event for attributes with multiple correlations
+    private function dedupAttributesForCorrelation(array &$event): bool
+    {
+        $limit = (Configure::read('MISP.correlation_limit') ?? 20);
+        $value_table = [];
+        $compositeTypes = $this->Attribute->getCompositeTypes();
+        if (!empty($event['Event']['Object'])) {
+            foreach ($event['Event']['Object'] as $object_id => $object) {
+                if (!empty($object['Attribute'])) {
+                    foreach ($object['Attribute'] as $attribute_id => $attribute) {
+                        $this->addAttributeToCorrelationDedupTable($value_table, $object_id, $attribute_id, $attribute, $compositeTypes);
+                    }
+                }
+            }
+        }
+
+        if (!empty($event['Attribute'])) {
+            foreach ($event['Attribute'] as $attribute_id => $attribute) {
+                $this->addAttributeToCorrelationDedupTable($value_table, null, $attribute_id, $attribute, $compositeTypes);
+            }
+        }
+
+        foreach ($value_table as $value => $elements) {
+            if (count($elements) > ($limit)) {
+                $keep = array_slice($elements, $limit);
+                foreach ($keep as $element) {
+                    if (!empty($element['o'])) {
+                        $event['Event']['Object'][$element['o']]['Attribute'][$element['a']]['skip_correlation'] = true;
+                    } else {
+                        $event['Event']['Attribute'][$element['a']]['skip_correlation'] = true;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     /**
