@@ -1822,6 +1822,15 @@ class ServersController extends AppController
         return new CakeResponse(array('body'=> json_encode($result), 'type' => 'json'));
     }
 
+    public function testSyncRules($id, $method)
+    {
+        $result = $this->Server->runTestSyncRules($id, $method);
+        if ($result === null) {
+            throw new NotFoundException(__('Invalid server'));
+        }
+        return $this->RestResponse->viewData($result);
+    }
+
     public function startZeroMQServer()
     {
         $pubSubTool = $this->Server->getPubSubTool();
