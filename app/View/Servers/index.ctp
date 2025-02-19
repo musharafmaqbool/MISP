@@ -58,7 +58,15 @@ foreach ($servers as $server):
                     foreach ($rules[$syncOption][$fieldOption][$typeOption] as $k => $temp) {
                         if ($k != 0) $ruleDescription[$syncOption] .= ', ';
                         if ($syncOption === 'push') {
-                            $temp = !empty($collection[$fieldOption][$temp]) ? $collection[$fieldOption][$temp] : $temp;
+                            if ($fieldOption == 'orgs') {
+                                $temp = !empty($collection[$fieldOption][$temp]) ? ($collection[$fieldOption][$temp] . ' (' . $temp . ')') : $temp;
+                            } else {
+                                $temp = !empty($collection[$fieldOption][$temp]) ? $collection[$fieldOption][$temp] : $temp;
+                            }
+                        } else {
+                            if ($fieldOption == 'orgs') {
+                                $temp = !empty($collection[$fieldOption][$temp]) ? ($collection[$fieldOption][$temp] . ' (' . $temp . ')') : $temp;
+                            }
                         }
                         $ruleDescription[$syncOption] .= h($temp);
                     }

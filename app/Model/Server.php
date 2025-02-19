@@ -5118,9 +5118,12 @@ class Server extends AppModel
         $this->Tag = ClassRegistry::init('Tag');
         $organisations = [];
         if ($user['Role']['perm_sharing_group'] || !Configure::read('Security.hide_organisation_index_from_users')) {
-            $organisations = $this->Organisation->find('column', [
-                'fields' => ['name'],
+            $organisations = $this->Organisation->find('all', [
+                'fields' => ['name', 'uuid'],
             ]);
+            $organisations = array_map(function($org) {
+                return ['name' => $org['Organisation']['name'], 'uuid' => $org['Organisation']['uuid']];
+            }, $organisations);
         }
         $tags = $this->Tag->find('column', [
             'fields' => ['name'],
