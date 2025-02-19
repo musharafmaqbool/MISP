@@ -189,7 +189,6 @@ echo $this->element('genericElements/assetLoader', array(
         }
 
         function addOptions($select, data) {
-            return 
             data.forEach(function(entry) {
                 if (entry.uuid !== undefined && entry.name !== undefined) {
                     $select.append($('<option/>', {
