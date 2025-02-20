@@ -2279,6 +2279,7 @@ class AppModel extends Model
                 break;
             case 135:
                 $sqlArray[] = "ALTER TABLE `roles` ADD `perm_sync_internal` tinyint(1) NOT NULL DEFAULT 0;";
+                $sqlArray[] = "ALTER TABLE `roles` ADD `perm_sync_authoritative` tinyint(1) NOT NULL DEFAULT 0;";
                 break;
             case 'fixNonEmptySharingGroupID':
                 $sqlArray[] = 'UPDATE `events` SET `sharing_group_id` = 0 WHERE `distribution` != 4;';
