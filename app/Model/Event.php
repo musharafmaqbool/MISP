@@ -4380,7 +4380,10 @@ class Event extends AppModel
             }
             // Also remove existing tags not present in the incoming data if user is sync_user and has authoritative flag set
             if (isset($data['Event']['Tag']) && $user['Role']['perm_tagger']) {
-                if (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) {
+                if (
+                    (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) ||
+                    ($user['Role']['perm_sync'] && !empty($user['Role']['perm_sync_authoritative']))
+                ) {
                     $existingTags = $this->EventTag->find('all', [
                         'recursive' => -1,
                         'conditions' => ['event_id' => $this->id],
