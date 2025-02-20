@@ -5667,6 +5667,9 @@ class EventsController extends AppController
             if (isset($module['mispattributes']['userConfig'])) {
                 foreach ($module['mispattributes']['userConfig'] as $configName => $config) {
                     if (!$fail) {
+                        if (empty($requestData['config'][$configName]) && empty($config['required'])) {
+                            continue;
+                        }
                         if (isset($config['validation'])) {
                             if ($config['validation'] === '0' && $config['type'] == 'String') {
                                 $validation = true;
