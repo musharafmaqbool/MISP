@@ -2913,7 +2913,10 @@ class MispAttribute extends AppModel
                     A solution to still keep the behavior for previous instance could be to not soft-delete the Tag if the remote instance
                     has a version below x
                 */
-                if (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) {
+                if (
+                    (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) ||
+                    ($user['Role']['perm_sync'] && !empty($user['Role']['perm_sync_authoritative']))
+                )
                     $existingTags = $this->AttributeTag->find('all', [
                         'recursive' => -1,
                         'conditions' => ['attribute_id' => $attribute['id']],
