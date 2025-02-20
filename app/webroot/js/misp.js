@@ -3786,10 +3786,14 @@ function serverRuleUpdate() {
     validOptions.forEach(function(type) {
         validFields.forEach(function(field) {
             var indexedList = {};
-            if (type === 'push' || field == 'type_objects') {
+            if (type === 'push' || field == 'type_objects' || field == 'orgs') {
                 if (window[field] !== undefined) {
                     window[field].forEach(function(item) {
-                        indexedList[item.id] = item.name;
+                        if (field == 'orgs') {
+                            indexedList[item.uuid] = item.name + ' (' + item.uuid + ')';
+                        } else {
+                            indexedList[item.id] = item.name;
+                        }
                     });
                 }
             }

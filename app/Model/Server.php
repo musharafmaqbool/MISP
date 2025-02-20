@@ -4205,18 +4205,41 @@ class Server extends AppModel
                 }
             }
             if (!empty($push_rules['orgs']['OR'])) {
-                if (!in_array($event['Event']['orgc_id'], $push_rules['orgs']['OR'])) {
+                $convertedRule = $this->convertUUIDsToIDs($push_rules['orgs']['OR']);
+                if (!in_array($event['Event']['orgc_id'], $convertedRule)) {
                     continue;
                 }
             }
             if (!empty($push_rules['orgs']['NOT'])) {
-                if (in_array($event['Event']['orgc_id'], $push_rules['orgs']['NOT'])) {
+                $convertedRule = $this->convertUUIDsToIDs($push_rules['orgs']['NOT']);
+                if (in_array($event['Event']['orgc_id'], $convertedRule)) {
                     continue;
                 }
             }
             $validServers[] = $server;
         }
         return $validServers;
+    }
+
+    private function convertUUIDsToIDs($orgs): array
+    {
+        $orgIDs = [];
+        $toConvert = [];
+        foreach ($orgs as $org) {
+            if (Validation::uuid($org)) {
+                $toConvert[] = $org;
+            } else {
+                $orgIDs[] = $org;
+            }
+        }
+        $converted = $this->Organisation->find('column', [
+            'fields' => ['id'],
+            'conditions' => [
+                'uuid' => $toConvert,
+            ],
+        ]);
+        $orgIDs = array_merge($orgIDs, $converted);
+        return $orgIDs;
     }
 
     /**
@@ -5118,9 +5141,12 @@ class Server extends AppModel
         $this->Tag = ClassRegistry::init('Tag');
         $organisations = [];
         if ($user['Role']['perm_sharing_group'] || !Configure::read('Security.hide_organisation_index_from_users')) {
-            $organisations = $this->Organisation->find('column', [
-                'fields' => ['name'],
+            $organisations = $this->Organisation->find('all', [
+                'fields' => ['name', 'uuid'],
             ]);
+            $organisations = array_map(function($org) {
+                return ['name' => $org['Organisation']['name'], 'uuid' => $org['Organisation']['uuid']];
+            }, $organisations);
         }
         $tags = $this->Tag->find('column', [
             'fields' => ['name'],
