@@ -5342,7 +5342,7 @@ class Server extends AppModel
                 'correlation_limit' => [
                     'level' => 0,
                     'description' => __('Set a value for the maximum number of correlations a value should have before MISP will refuse to correlate it (extremely over-correlating values are rarely useful from a correlation perspective).'),
-                    'value' => 100,
+                    'value' => 20,
                     'test' => 'testForNumeric',
                     'type' => 'numeric',
                     'null' => true
