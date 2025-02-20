@@ -4108,9 +4108,9 @@ class Event extends AppModel
         foreach ($values as $value) {
             $value = hash('sha256', $attribute['value']);
             if (!isset($value_table[$value])) {
-                $value_table[$value] = [['o' => $object_id, 'a' => $attribute_id]];
+                $value_table[$value] = ['v' => $attribute['value'], 'data' => [['o' => $object_id, 'a' => $attribute_id]]];
             } else {
-                $value_table[$value][] = ['o' => $object_id, 'a' => $attribute_id];
+                $value_table[$value]['data'][] = ['o' => $object_id, 'a' => $attribute_id, 'v' => $attribute['value']];
             }
         }
     }
@@ -4131,20 +4131,26 @@ class Event extends AppModel
             }
         }
 
-        if (!empty($event['Attribute'])) {
-            foreach ($event['Attribute'] as $attribute_id => $attribute) {
+        if (!empty($event['Event']['Attribute'])) {
+            foreach ($event['Event']['Attribute'] as $attribute_id => $attribute) {
                 $this->addAttributeToCorrelationDedupTable($value_table, null, $attribute_id, $attribute, $compositeTypes);
             }
         }
 
         foreach ($value_table as $value => $elements) {
-            if (count($elements) > ($limit)) {
-                $keep = array_slice($elements, $limit);
-                foreach ($keep as $element) {
-                    if (!empty($element['o'])) {
-                        $event['Event']['Object'][$element['o']]['Attribute'][$element['a']]['skip_correlation'] = true;
+            if (count($elements['data']) > ($limit)) {
+                $this->Attribute->Correlation->OverCorrelatingValue->block($elements['v']);
+                foreach ($elements['data'] as $i => $element) {
+                    if (isset($element['o']) && $element['o'] !== null) {
+                        $event['Event']['Object'][$element['o']]['Attribute'][$element['a']]['skip_overcorrelation_unblock'] = true;
+                        if ($i > $limit) {
+                            $event['Event']['Object'][$element['o']]['Attribute'][$element['a']]['skip_correlation'] = true;
+                        }
                     } else {
-                        $event['Event']['Attribute'][$element['a']]['skip_correlation'] = true;
+                        $event['Event']['Attribute'][$element['a']]['skip_overcorrelation_unblock'] = true;
+                        if ($i > $limit) {
+                            $event['Event']['Attribute'][$element['a']]['skip_correlation'] = true;
+                        }
                     }
                 }
             }
