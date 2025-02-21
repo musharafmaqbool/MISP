@@ -2914,7 +2914,7 @@ class Attribute extends AppModel
                 if (
                     (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) ||
                     ($user['Role']['perm_sync'] && !empty($user['Role']['perm_sync_authoritative']))
-                )
+                ) {
                     $existingTags = $this->AttributeTag->find('all', [
                         'recursive' => -1,
                         'conditions' => ['attribute_id' => $attribute['id']],
