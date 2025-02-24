@@ -93,7 +93,7 @@ class AppModel extends Model
         117 => false, 118 => false, 119 => false, 120 => false, 121 => false, 122 => false,
         123 => false, 124 => false, 125 => false, 126 => false, 127 => false, 128 => false,
         129 => false, 130 => false, 131 => false, 132 => false, 133 => false, 134 => true,
-        135 => true,
+        135 => false, 136 => true,
     );
 
     const ADVANCED_UPDATES_DESCRIPTION = array(
@@ -2221,7 +2221,7 @@ class AppModel extends Model
                 // change bookmarks' table's comment field to utf8_mb4
                 $sqlArray[] = "ALTER TABLE `bookmarks` MODIFY `comment` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
                 break;
-            case 131;
+            case 131:
                 $sqlArray[] = "ALTER TABLE `galaxies` ADD `default` tinyint(1) NOT NULL DEFAULT 0;";
                 $sqlArray[] = "ALTER TABLE `galaxies` ADD `org_id` int(10) unsigned NOT NULL";
                 $sqlArray[] = "ALTER TABLE `galaxies` ADD `orgc_id` int(10) unsigned NOT NULL";
@@ -2278,6 +2278,9 @@ class AppModel extends Model
                 $sqlArray[] = "UPDATE `roles` SET `perm_server_sign`=1 WHERE `perm_site_admin` = 1;";
                 break;
             case 135:
+                $sqlArray[] = "ALTER TABLE `taxii_servers` ADD `skip_proxy` tinyint(1) NOT NULL DEFAULT 0;";
+                break;
+            case 136:
                 $sqlArray[] = "ALTER TABLE `roles` ADD `perm_sync_internal` tinyint(1) NOT NULL DEFAULT 0;";
                 $sqlArray[] = "ALTER TABLE `roles` ADD `perm_sync_authoritative` tinyint(1) NOT NULL DEFAULT 0;";
                 break;
