@@ -182,6 +182,15 @@ function renderMermaid(code) {
 }
 
 async function doAsyncMermaidRendering(id, code) {
+    function partialEscapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            // Quotes need to be preserved for mermaid to parse some diagrams correctly
+    }
+    code = partialEscapeHtml(code)
+
     setTimeout(async () => {
         var html = ''
         try {
