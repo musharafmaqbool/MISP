@@ -478,16 +478,16 @@ class SharingGroup extends AppModel
      */
     public function checkIfCanBeUsed($user, $isRest, $element, $modelKey=false)
     {
-        $sgs = $this->SharingGroup->fetchAllAuthorised($user, 'name', 1);
+        $sgs = $this->fetchAllAuthorised($user, 'name', 1);
         $object = !empty($modelKey) ? $element[$modelKey] : $element;
-        if ($user['perm_sync']  & $isRest) {
+        if ($user['Role']['perm_sync'] && $isRest) {
             if (isset($object['SharingGroup'])) {
                 if (!isset($object['SharingGroup']['uuid'])) {
                     return __('Invalid Sharing Group or not authorised.');
                 } else {
                     if (
-                        $this->SharingGroup->checkIfExists($object['SharingGroup']['uuid']) &&
-                        $this->SharingGroup->checkIfAuthorised($user, $object['SharingGroup']['uuid'])
+                        !$this->checkIfExists($object['SharingGroup']['uuid']) ||
+                        !$this->checkIfAuthorised($user, $object['SharingGroup']['uuid'])
                     ) {
                         return __('Invalid Sharing Group or not authorised (Sync user is not contained in the Sharing group).');
                     }

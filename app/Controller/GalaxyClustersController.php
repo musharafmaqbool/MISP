@@ -284,7 +284,7 @@ class GalaxyClustersController extends AppController
             $cluster['GalaxyCluster']['galaxy_id'] = $galaxyId;
             $cluster['GalaxyCluster']['published'] = false;
             if (isset($cluster['GalaxyCluster']['distribution']) && $cluster['GalaxyCluster']['distribution'] == 4) {
-                $canSGBeUsed = $this->MispObject->Event->SharingGroup->checkIfCanBeUsed($this->Auth->user(), $this->_isRest(), $cluster, 'GalaxyCluster');
+                $canSGBeUsed = $this->SharingGroup->checkIfCanBeUsed($this->Auth->user(), $this->_isRest(), $cluster, 'GalaxyCluster');
                 if ($canSGBeUsed !== true) {
                     throw new MethodNotAllowedException($canSGBeUsed);
                 }
@@ -416,7 +416,7 @@ class GalaxyClustersController extends AppController
             }
 
             if (isset($cluster['GalaxyCluster']['distribution']) && $cluster['GalaxyCluster']['distribution'] == 4) {
-                $canSGBeUsed = $this->MispObject->Event->SharingGroup->checkIfCanBeUsed($this->Auth->user(), $this->_isRest(), $cluster, 'GalaxyCluster');
+                $canSGBeUsed = $this->SharingGroup->checkIfCanBeUsed($this->Auth->user(), $this->_isRest(), $cluster, 'GalaxyCluster');
                 if ($canSGBeUsed !== true) {
                     throw new MethodNotAllowedException($canSGBeUsed);
                 }
