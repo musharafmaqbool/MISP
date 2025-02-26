@@ -1790,8 +1790,9 @@ function constructClusterTagHtml(tagData) {
         tagData.Tag.colour = '#ffffff'
         addBorder = true
     }
+    var faNamespace = getFontAwesomeNamespace(tagData.GalaxyCluster.Galaxy.icon);
     var $tag = $('<span/>').append(
-        $('<i/>').addClass('fa fa-' + tagData.GalaxyCluster.Galaxy.icon).css('margin-right', '5px'),
+        $('<i/>').addClass(faNamespace + ' fa-' + tagData.GalaxyCluster.Galaxy.icon).css('margin-right', '5px'),
         $('<span/>').text(tagData.GalaxyCluster.type + ' ↦ ' + tagData.GalaxyCluster.value)
     )
         .addClass('tag')
