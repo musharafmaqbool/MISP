@@ -56,6 +56,14 @@ class AnalystDataController extends AppController
         $this->loadModel('Event');
         $currentUser = $this->Auth->user();
         $params = [
+            'beforeSave' => function(array $analystData) use ($currentUser) {
+                if (isset($analystData[$this->modelSelection]['distribution']) && $analystData[$this->modelSelection]['distribution'] == 4) {
+                    $canSGBeUsed = $this->MispObject->Event->SharingGroup->checkIfCanBeUsed($currentUser, $this->_isRest(), $analystData, $this->modelSelection);
+                    if ($canSGBeUsed !== true) {
+                        throw new MethodNotAllowedException($canSGBeUsed);
+                    }
+                }
+            },
             'afterSave' => function (array $analystData) use ($currentUser) {
                 $this->Event->captureAnalystData($currentUser, $this->request->data[$this->modelSelection], $this->modelSelection, $analystData[$this->modelSelection]['uuid']);
             }
@@ -98,6 +106,12 @@ class AnalystDataController extends AppController
                 return $analystData;
             },
             'beforeSave' => function(array $analystData): array {
+                if (isset($analystData[$this->modelSelection]['distribution']) && $analystData[$this->modelSelection]['distribution'] == 4) {
+                    $canSGBeUsed = $this->MispObject->Event->SharingGroup->checkIfCanBeUsed($currentUser, $this->_isRest(), $analystData, $this->modelSelection);
+                    if ($canSGBeUsed !== true) {
+                        throw new MethodNotAllowedException($canSGBeUsed);
+                    }
+                }
                 $analystData[$this->modelSelection]['modified'] = date('Y-m-d H:i:s');
                 return $analystData;
             },
