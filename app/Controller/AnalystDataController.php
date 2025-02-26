@@ -58,7 +58,7 @@ class AnalystDataController extends AppController
         $params = [
             'beforeSave' => function(array $analystData) use ($currentUser) {
                 if (isset($analystData[$this->modelSelection]['distribution']) && $analystData[$this->modelSelection]['distribution'] == 4) {
-                    $canSGBeUsed = $this->MispObject->Event->SharingGroup->checkIfCanBeUsed($currentUser, $this->_isRest(), $analystData, $this->modelSelection);
+                    $canSGBeUsed = $this->Event->SharingGroup->checkIfCanBeUsed($currentUser, $this->_isRest(), $analystData, $this->modelSelection);
                     if ($canSGBeUsed !== true) {
                         throw new MethodNotAllowedException($canSGBeUsed);
                     }
@@ -107,7 +107,7 @@ class AnalystDataController extends AppController
             },
             'beforeSave' => function(array $analystData): array {
                 if (isset($analystData[$this->modelSelection]['distribution']) && $analystData[$this->modelSelection]['distribution'] == 4) {
-                    $canSGBeUsed = $this->MispObject->Event->SharingGroup->checkIfCanBeUsed($currentUser, $this->_isRest(), $analystData, $this->modelSelection);
+                    $canSGBeUsed = $this->Event->SharingGroup->checkIfCanBeUsed($currentUser, $this->_isRest(), $analystData, $this->modelSelection);
                     if ($canSGBeUsed !== true) {
                         throw new MethodNotAllowedException($canSGBeUsed);
                     }
