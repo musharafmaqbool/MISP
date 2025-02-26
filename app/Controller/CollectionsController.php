@@ -23,12 +23,21 @@ class CollectionsController extends AppController
     ];
     
     public function add()
-    {   
+    {
         $this->Collection->current_user = $this->Auth->user();
+        $currentUser = $this->Auth->user();
         $params = [];
         if ($this->request->is('post')) {
             $data = $this->request->data;
             $params = [
+                'beforeSave' => function (array $collection) use ($currentUser) {
+                    if (isset($collection['Collection']['distribution']) && $collection['Collection']['distribution'] == 4) {
+                        $canSGBeUsed = $this->MispObject->Event->SharingGroup->checkIfCanBeUsed($currentUser, $this->_isRest(), $collection, 'Collection');
+                        if ($canSGBeUsed !== true) {
+                            throw new MethodNotAllowedException($canSGBeUsed);
+                        }
+                    }
+                },
                 'afterSave' => function (array $collection) use ($data) {
                     $this->Collection->CollectionElement->captureElements($collection);
                     return $collection;
@@ -75,6 +84,12 @@ class CollectionsController extends AppController
                 $data['Collection']['modified'] <= $oldCollection['Collection']['modified']
             ) {
                 throw new ForbiddenException(__('Collection received older or same as local version.'));
+            }
+            if (isset($data['Collection']['distribution']) && $data['Collection']['distribution'] == 4) {
+                $canSGBeUsed = $this->MispObject->Event->SharingGroup->checkIfCanBeUsed($this->Auth->user(), $this->_isRest(), $data, 'Collection');
+                if ($canSGBeUsed !== true) {
+                    throw new MethodNotAllowedException($canSGBeUsed);
+                }
             }
             $params = [
                 'afterSave' => function (array &$collection) use ($data) {
