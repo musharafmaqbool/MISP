@@ -105,7 +105,7 @@ class AnalystDataController extends AppController
                 }
                 return $analystData;
             },
-            'beforeSave' => function(array $analystData): array {
+            'beforeSave' => function (array $analystData) use ($currentUser): array {
                 if (isset($analystData[$this->modelSelection]['distribution']) && $analystData[$this->modelSelection]['distribution'] == 4) {
                     $canSGBeUsed = $this->Event->SharingGroup->checkIfCanBeUsed($currentUser, $this->_isRest(), $analystData, $this->modelSelection);
                     if ($canSGBeUsed !== true) {
