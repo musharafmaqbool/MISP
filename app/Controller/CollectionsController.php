@@ -38,6 +38,7 @@ class CollectionsController extends AppController
                             throw new MethodNotAllowedException($canSGBeUsed);
                         }
                     }
+                    return $collection;
                 },
                 'afterSave' => function (array $collection) use ($data) {
                     $this->Collection->CollectionElement->captureElements($collection);
