@@ -181,7 +181,7 @@ class EventReport extends AppModel
                         ]);
                         $passedReportTags = isset($report['Tag']) ? $report['Tag'] : [];
                         $this->EventReportTag->pruneOutdatedTagsFromSync($passedReportTags, $existingTags);
-                        $this->EventReportTag->captureEventReportTags($user, $passedReportTags);
+                        $this->EventReportTag->captureEventReportTags($user, $savedReport['id'], $passedReportTags);
                     }
                 }
             }
@@ -219,7 +219,7 @@ class EventReport extends AppModel
      * @param  bool  $nothingToChange
      * @return array Any errors preventing the edition
      */
-    public function editReport(array $user, array $report, $eventId, $fromPull = false, &$nothingToChange = false)
+    public function editReport(array $user, array $report, $eventId, $fromPull = false, $server = false, &$nothingToChange = false)
     {
         $errors = array();
         if (!isset($report['EventReport']['uuid'])) {
@@ -237,7 +237,7 @@ class EventReport extends AppModel
         ));
         if (empty($existingReport)) {
             if ($fromPull) {
-                return $this->captureReport($user, $report, $eventId);
+                return $this->captureReport($user, $report, $eventId, $server);
             } else {
                 $errors[] = __('Event Report not found.');
                 return $errors;
@@ -258,6 +258,23 @@ class EventReport extends AppModel
         }
         $errors = $this->saveAndReturnErrors($report, ['fieldList' => self::CAPTURE_FIELDS], $errors);
         if (empty($errors)) {
+            if ($user['Role']['perm_tagger']) {
+                if (
+                    (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) ||
+                    ($user['Role']['perm_sync'] && !empty($user['Role']['perm_sync_authoritative']))
+                ) {
+                    $existingTags = $this->EventReportTag->find('all', [
+                        'recursive' => -1,
+                        'conditions' => ['event_report_id' => $report['EventReport']['id']],
+                        'contain' => [
+                            'Tag' => ['fields' => ['Tag.id', 'Tag.name']],
+                        ]
+                    ]);
+                    $passedReportTags = isset($report['EventReport']['Tag']) ? $report['EventReport']['Tag'] : [];
+                    $this->EventReportTag->pruneOutdatedTagsFromSync($passedReportTags, $existingTags);
+                    $this->EventReportTag->captureEventReportTags($user, $report['EventReport']['id'], $passedReportTags);
+                }
+            }
             $this->Event->captureAnalystData($user, $report['EventReport'], 'EventReport', $report['EventReport']['uuid']);
             if (!$fromPull) {
                 $this->Event->unpublishEvent($eventId);
