@@ -349,12 +349,49 @@ class Galaxy extends AppModel
      * @param array $galaxy The galaxy to be captured
      * @return array|false the captured galaxy or false on error
      */
-    public function captureGalaxy(array $user, array $galaxy)
+    public function captureGalaxy(array $user, array $galaxy, $fromPull=false, $orgId=0)
     {
         if (empty($galaxy['uuid'])) {
             return false;
         }
 
+        if ($fromPull) {
+            $galaxy['org_id'] = $orgId;
+        } else {
+            $galaxy['org_id'] = $user['Organisation']['id'];
+        }
+
+        if (!isset($galaxy['orgc_id']) && !isset($galaxy['Orgc'])) {
+            $galaxy['orgc_id'] = $galaxy['org_id'];
+        } else {
+            if (!isset($galaxy['Orgc'])) {
+                if (isset($galaxy['orgc_id']) && $galaxy['orgc_id'] != $user['org_id'] && !$user['Role']['perm_sync'] && !$user['Role']['perm_site_admin']) {
+                    $galaxy['orgc_id'] = $galaxy['org_id']; // Only sync user can create cluster on behalf of other users
+                }
+            } else {
+                if ($galaxy['Orgc']['uuid'] != $user['Organisation']['uuid'] && !$user['Role']['perm_sync'] && !$user['Role']['perm_site_admin']) {
+                    $galaxy['orgc_id'] = $galaxy['org_id']; // Only sync user can create cluster on behalf of other users
+                }
+            }
+            if (isset($galaxy['orgc_id']) && $galaxy['orgc_id'] != $user['org_id'] && !$user['Role']['perm_sync'] && !$user['Role']['perm_site_admin']) {
+                $galaxy['orgc_id'] = $galaxy['org_id']; // Only sync user can create cluster on behalf of other users
+            }
+        }
+
+        if (!Configure::check('MISP.enableOrgBlocklisting') || Configure::read('MISP.enableOrgBlocklisting') !== false) {
+            $OrgBlocklist = ClassRegistry::init('OrgBlocklist');
+            if (!isset($galaxy['Orgc']['uuid'])) {
+                $orgc = $this->Orgc->find('first', array('conditions' => array('Orgc.id' => $galaxy['orgc_id']), 'fields' => array('Orgc.uuid'), 'recursive' => -1));
+            } else {
+                $orgc = array('Orgc' => array('uuid' => $galaxy['Orgc']['uuid']));
+            }
+            if ($galaxy['orgc_id'] != 0 && $OrgBlocklist->hasAny(array('OrgBlocklist.org_uuid' => $orgc['Orgc']['uuid']))) {
+                return false;
+            }
+        }
+
+        $galaxy = $this->captureOrganisationAndSG(['Galaxy' => $galaxy], 'Galaxy', $user);
+        $galaxy = $galaxy['Galaxy'];
         $existingGalaxy = $this->find('first', [
             'recursive' => -1,
             'conditions' => ['Galaxy.uuid' => $galaxy['uuid']],
