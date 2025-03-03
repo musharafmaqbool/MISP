@@ -390,7 +390,7 @@ class Galaxy extends AppModel
             }
         }
 
-        $galaxy = $this->captureOrganisationAndSG(['Galaxy' => $galaxy], 'Galaxy', $user);
+        $galaxy = $this->GalaxyCluster->captureOrganisationAndSG(['Galaxy' => $galaxy], 'Galaxy', $user);
         $galaxy = $galaxy['Galaxy'];
         $existingGalaxy = $this->find('first', [
             'recursive' => -1,
