@@ -529,6 +529,47 @@ class EventReport extends AppModel
         return $report;
     }
 
+    public function touch($eventReportID)
+    {
+        $report = $this->find('first', [
+            'recursive' => -1,
+            'conditions' => [
+                'EventReport.id' => $eventReportID,
+            ],
+        ]);
+        $fields = ['timestamp'];
+        $report['EventReport']['timestamp'] = time();;
+        $success = $this->save($report, true, $fields);
+        if ($success) {
+            $this->Event->unpublishEvent($report['EventReport']['event_id']);
+        }
+    }
+
+    public function attachTags($user, $eventReport, $tag_id_list, $local = false)
+    {
+        $saveResult = $this->EventReportTag->attachTags($user, $eventReport['EventReport']['id'], $tag_id_list, $local);
+        $successes = $saveResult['successes'];
+        if ($successes > 0) {
+            if (empty($local)) {
+                $this->touch($eventReport['EventReport']['id']);
+            }
+            return $saveResult;
+        }
+        return $saveResult;
+    }
+
+    public function detachTag($eventReportTagID, $eventReportID, $local = false): bool
+    {
+        $success = $this->EventReportTag->delete($eventReportTagID);
+        if ($success) {
+            if (empty($local)) {
+                $this->touch($eventReportID);
+            }
+            return true;
+        }
+        return false;
+    }
+
     /**
      * getProxyMISPElements Extract MISP Elements from an event and make them accessible by their UUID
      *
