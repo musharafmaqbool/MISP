@@ -240,6 +240,12 @@ class Role extends AppModel
                 'readonlyenabled' => false,
                 'title' => __('Internal Synchronisation permission, can be use to synchronise data with the internal strategy where distribution won\'t be downgraded after PULLing.')
             ),
+            'perm_sync_authoritative' => array(
+                'id' => 'RolePermSyncAuthoritative',
+                'text' => 'Authoritative Sync Actions',
+                'readonlyenabled' => false,
+                'title' => __('Consider the source authoritative for synchronization. Data, such as tags, will be mirrored to match the source. For example, a tag may be deleted locally if it does not exist in the source.'),
+            ),
             'perm_audit' => array(
                 'id' => 'RolePermAudit',
                 'text' => 'Audit Actions',
