@@ -4019,7 +4019,7 @@ class Event extends AppModel
             }
             if (!empty($data['Event']['EventReport'])) {
                 foreach ($data['Event']['EventReport'] as $report) {
-                    $result = $this->EventReport->captureReport($user, $report, $this->id);
+                    $result = $this->EventReport->captureReport($user, $report, $this->id, $server);
                 }
             }
 
@@ -4369,7 +4369,7 @@ class Event extends AppModel
             if (isset($data['Event']['EventReport'])) {
                 foreach ($data['Event']['EventReport'] as $report) {
                     $nothingToChange = false;
-                    $result = $this->EventReport->editReport($user, ['EventReport' => $report], $this->id, true, $nothingToChange);
+                    $result = $this->EventReport->editReport($user, ['EventReport' => $report], $this->id, true, $server, $nothingToChange);
                     if (!empty($result)) {
                         $validationErrors['EventReport'][] = $result;
                     }
