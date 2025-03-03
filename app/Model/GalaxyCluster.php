@@ -1690,6 +1690,7 @@ class GalaxyCluster extends AppModel
      */
     public function uploadClusterToServer(array $cluster, array $server, ServerSyncTool $serverSync, array $user)
     {
+        $cluster_id = $cluster['GalaxyCluster']['id'];
         $cluster = $this->__prepareForPushToServer($cluster, $server);
         if (is_numeric($cluster)) {
             return $cluster;
@@ -1701,8 +1702,8 @@ class GalaxyCluster extends AppModel
             }
             $serverSync->pushGalaxyCluster($cluster)->json();
         } catch (Exception $e) {
-            $title = __('Uploading GalaxyCluster (%s) to Server (%s)', $cluster['GalaxyCluster']['id'], $server['Server']['id']);
-            $this->loadLog()->createLogEntry($user, 'push', 'GalaxyCluster', $cluster['GalaxyCluster']['id'], $title, $e->getMessage());
+            $title = __('Uploading GalaxyCluster (%s) to Server (%s)', $cluster_id, $server['Server']['id']);
+            $this->loadLog()->createLogEntry($user, 'push', 'GalaxyCluster', $cluster_id, $title, $e->getMessage());
 
             $this->logException("Could not push galaxy cluster to remote server {$serverSync->serverId()}", $e);
             return $e->getMessage();

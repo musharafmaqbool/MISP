@@ -216,7 +216,7 @@ class ServerSyncTool
      */
     public function pushGalaxyCluster(array $cluster)
     {
-        $logMessage = "Pushing Galaxy Cluster #{$cluster['GalaxyCluster']['id']} to Server #{$this->serverId()}";
+        $logMessage = "Pushing Galaxy Cluster #{$cluster['GalaxyCluster']['uuid']} to Server #{$this->serverId()}";
         return $this->post('/galaxies/pushCluster', [$cluster], $logMessage);
     }
 
