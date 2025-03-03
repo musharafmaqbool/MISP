@@ -168,6 +168,7 @@ class EventReport extends AppModel
             ]);
             if ($savedReport) {
                 if ($user['Role']['perm_tagger']) {
+                    $passedReportTags = isset($report['EventReport']['Tag']) ? $report['EventReport']['Tag'] : [];
                     if (
                         (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) ||
                         ($user['Role']['perm_sync'] && !empty($user['Role']['perm_sync_authoritative']))
@@ -179,7 +180,6 @@ class EventReport extends AppModel
                                 'Tag' => ['fields' => ['Tag.id', 'Tag.name']],
                             ]
                         ]);
-                        $passedReportTags = isset($report['Tag']) ? $report['Tag'] : [];
                         $this->EventReportTag->pruneOutdatedTagsFromSync($passedReportTags, $existingTags);
                     }
                     $this->EventReportTag->captureEventReportTags($user, $savedReport['id'], $passedReportTags);
@@ -259,6 +259,7 @@ class EventReport extends AppModel
         $errors = $this->saveAndReturnErrors($report, ['fieldList' => self::CAPTURE_FIELDS], $errors);
         if (empty($errors)) {
             if ($user['Role']['perm_tagger']) {
+                $passedReportTags = isset($report['EventReport']['Tag']) ? $report['EventReport']['Tag'] : [];
                 if (
                     (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) ||
                     ($user['Role']['perm_sync'] && !empty($user['Role']['perm_sync_authoritative']))
@@ -270,7 +271,6 @@ class EventReport extends AppModel
                             'Tag' => ['fields' => ['Tag.id', 'Tag.name']],
                         ]
                     ]);
-                    $passedReportTags = isset($report['EventReport']['Tag']) ? $report['EventReport']['Tag'] : [];
                     $this->EventReportTag->pruneOutdatedTagsFromSync($passedReportTags, $existingTags);
                 }
                 $this->EventReportTag->captureEventReportTags($user, $report['EventReport']['id'], $passedReportTags);

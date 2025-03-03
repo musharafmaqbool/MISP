@@ -91,7 +91,7 @@ class EventReportTag extends AppModel
             $tag_id = $this->Tag->captureTag($tag, $user);
             if ($tag_id) {
                 $tag['id'] = $tag_id;
-                $isLocal = !empty($eventReportTags['local']) ? $eventReportTags['local'] : false;
+                $isLocal = !empty($tag['local']) ? $tag['local'] : false;
                 $this->handleEventReportTag($user, $event_report_id, $tag_id, $isLocal);
             } else {
                 // If we couldn't attach the tag it is most likely because we couldn't create it - which could have many reasons
