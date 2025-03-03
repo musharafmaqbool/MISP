@@ -181,8 +181,8 @@ class EventReport extends AppModel
                         ]);
                         $passedReportTags = isset($report['Tag']) ? $report['Tag'] : [];
                         $this->EventReportTag->pruneOutdatedTagsFromSync($passedReportTags, $existingTags);
-                        $this->EventReportTag->captureEventReportTags($user, $savedReport['id'], $passedReportTags);
                     }
+                    $this->EventReportTag->captureEventReportTags($user, $savedReport['id'], $passedReportTags);
                 }
             }
             if ($savedReport) {
@@ -272,8 +272,8 @@ class EventReport extends AppModel
                     ]);
                     $passedReportTags = isset($report['EventReport']['Tag']) ? $report['EventReport']['Tag'] : [];
                     $this->EventReportTag->pruneOutdatedTagsFromSync($passedReportTags, $existingTags);
-                    $this->EventReportTag->captureEventReportTags($user, $report['EventReport']['id'], $passedReportTags);
                 }
+                $this->EventReportTag->captureEventReportTags($user, $report['EventReport']['id'], $passedReportTags);
             }
             $this->Event->captureAnalystData($user, $report['EventReport'], 'EventReport', $report['EventReport']['uuid']);
             if (!$fromPull) {
