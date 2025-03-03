@@ -102,7 +102,7 @@ class Galaxy extends AppModel
             if (isset($v['Galaxy']['kill_chain_order']) && $v['Galaxy']['kill_chain_order'] !== '') {
                 $results[$k]['Galaxy']['kill_chain_order'] = json_decode($v['Galaxy']['kill_chain_order'], true);
             } else {
-                unset($results[$k]['Galaxy']['kill_chain_order']);
+                $results[$k]['Galaxy']['kill_chain_order'] = null;
             }
             if (isset($v['Galaxy']['org_id']) && $v['Galaxy']['org_id'] == 0) {
                 if (isset($results[$k]['Org'])) {
