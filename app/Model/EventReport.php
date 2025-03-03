@@ -84,7 +84,8 @@ class EventReport extends AppModel
     const SUPPORTED_IMAGES = ['gif', 'jpg', 'jpeg', 'png', 'svg',];
     private $imageCache = [];
 
-    public function __construct($id = false, $table = null, $ds = null) {
+    public function __construct($id = false, $table = null, $ds = null)
+    {
         parent::__construct();
         $this->schema();
         $this->_schema['distribution']['default'] = Configure::read('MISP.default_eventreport_distribution') ?? 5;
@@ -138,7 +139,7 @@ class EventReport extends AppModel
      * @return array Any errors preventing the capture
      * @throws Exception
      */
-    public function captureReport(array $user, array $report, $eventId)
+    public function captureReport(array $user, array $report, $eventId, $server = false)
     {
         if (!isset($report['EventReport'])) {
             $report = ['EventReport' => $report];
@@ -151,7 +152,11 @@ class EventReport extends AppModel
         $this->create();
         $errors = $this->saveAndReturnErrors($report, ['fieldList' => self::CAPTURE_FIELDS]);
         if (!empty($errors)) {
-            $this->loadLog()->createLogEntry($user, 'add', 'EventReport', 0,
+            $this->loadLog()->createLogEntry(
+                $user,
+                'add',
+                'EventReport',
+                0,
                 __('Event Report dropped due to validation for Event report %s failed: %s', $this->data['EventReport']['uuid'], $this->data['EventReport']['name']),
                 __('Validation errors: %s.%sFull report: %s', json_encode($errors), PHP_EOL, json_encode($report['EventReport']))
             );
@@ -161,6 +166,25 @@ class EventReport extends AppModel
                 'fields' => ['id', 'uuid'],
                 'conditions' => ['id' => $this->id],
             ]);
+            if ($savedReport) {
+                if ($user['Role']['perm_tagger']) {
+                    if (
+                        (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) ||
+                        ($user['Role']['perm_sync'] && !empty($user['Role']['perm_sync_authoritative']))
+                    ) {
+                        $existingTags = $this->EventReportTag->find('all', [
+                            'recursive' => -1,
+                            'conditions' => ['event_report_id' => $savedReport['id']],
+                            'contain' => [
+                                'Tag' => ['fields' => ['Tag.id', 'Tag.name']],
+                            ]
+                        ]);
+                        $passedReportTags = isset($report['Tag']) ? $report['Tag'] : [];
+                        $this->EventReportTag->pruneOutdatedTagsFromSync($passedReportTags, $existingTags);
+                        $this->EventReportTag->captureEventReportTags($user, $passedReportTags);
+                    }
+                }
+            }
             if ($savedReport) {
                 $this->Event->captureAnalystData($user, $report['EventReport'], 'EventReport', $savedReport['EventReport']['uuid']);
             }
@@ -250,9 +274,9 @@ class EventReport extends AppModel
      * @param  bool $hard
      * @return array Any errors preventing the deletion
      */
-    public function deleteReport(array $user, $report, $hard=false)
+    public function deleteReport(array $user, $report, $hard = false)
     {
-        $report = $this->fetchIfAuthorized($user, $report, 'delete', $throwErrors=true, $full=false);
+        $report = $this->fetchIfAuthorized($user, $report, 'delete', $throwErrors = true, $full = false);
         $errors = [];
         if ($hard) {
             $deleted = $this->delete($report['EventReport']['id'], true);
@@ -278,7 +302,7 @@ class EventReport extends AppModel
      */
     public function restoreReport(array $user, $id)
     {
-        $report = $this->fetchIfAuthorized($user, $id, 'edit', $throwErrors=true, $full=false);
+        $report = $this->fetchIfAuthorized($user, $id, 'edit', $throwErrors = true, $full = false);
         $report['EventReport']['deleted'] = false;
         $errors = $this->saveAndReturnErrors($report, ['fieldList' => ['deleted']]);
         if (empty($errors)) {
@@ -315,7 +339,7 @@ class EventReport extends AppModel
                         'OR' => array(
                             'Event.org_id' => $user['org_id'],
                             'EventReport.distribution' => array('1', '2', '3', '5'),
-                            'AND '=> array(
+                            'AND ' => array(
                                 'EventReport.distribution' => 4,
                                 'EventReport.sharing_group_id' => $sgids,
                             )
@@ -350,7 +374,7 @@ class EventReport extends AppModel
             if (!$user['Role']['perm_site_admin'] && $event['Event']['org_id'] != $user['org_id']) {
                 $conditions['AND'][] = [
                     'EventReport.distribution' => [1, 2, 3, 5],
-                    'AND '=> [
+                    'AND ' => [
                         'EventReport.distribution' => 4,
                         'EventReport.sharing_group_id' => $sgids,
                     ]
@@ -373,7 +397,7 @@ class EventReport extends AppModel
      * @param  bool  $full
      * @return array
      */
-    public function simpleFetchById(array $user, $reportId, $throwErrors=true, $full=false)
+    public function simpleFetchById(array $user, $reportId, $throwErrors = true, $full = false)
     {
         if (is_numeric($reportId)) {
             $options = array('conditions' => array("EventReport.id" => $reportId));
@@ -404,7 +428,7 @@ class EventReport extends AppModel
      * @param  bool  $full
      * @return array
      */
-    public function fetchReports(array $user, array $options = array(), $full=false)
+    public function fetchReports(array $user, array $options = array(), $full = false)
     {
         $params = array(
             'conditions' => $this->buildACLConditions($user),
@@ -437,7 +461,7 @@ class EventReport extends AppModel
      * @param  bool  $full
      * @return array The report or an error message
      */
-    public function fetchIfAuthorized(array $user, $report, $authorizations, $throwErrors=true, $full=false)
+    public function fetchIfAuthorized(array $user, $report, $authorizations, $throwErrors = true, $full = false)
     {
         $authorizations = is_array($authorizations) ? $authorizations : array($authorizations);
         $possibleAuthorizations = array('view', 'edit', 'delete');
@@ -448,7 +472,7 @@ class EventReport extends AppModel
             $report['EventReport'] = $report;
         }
         if (!isset($report['EventReport']['uuid'])) {
-            $report = $this->simpleFetchById($user, $report, $throwErrors=$throwErrors, $full=$full);
+            $report = $this->simpleFetchById($user, $report, $throwErrors = $throwErrors, $full = $full);
             if (empty($report)) {
                 $message = __('Invalid report');
                 return array('authorized' => false, 'error' => $message);
@@ -606,12 +630,11 @@ class EventReport extends AppModel
         foreach ($templateVarProxy as $varName => $replacementValue) {
             $varSyntax = '/{{\s*' . preg_quote($varName, '/') . '\s*}}/';
             $content = preg_replace($varSyntax, $replacementValue, $content);
-
         }
         return $content;
     }
 
-    public function replaceMISPElementByTheirValue($content, $event_id, $user, $useHtml=false)
+    public function replaceMISPElementByTheirValue($content, $event_id, $user, $useHtml = false)
     {
         $elementFormatter = new MISPElementHTMLFormatterTool();
         $proxyMISPElements = $this->getProxyMISPElements($user, $event_id);
@@ -680,7 +703,7 @@ class EventReport extends AppModel
         $rePictureElement = sprintf('/(?<!@)!\[[^\[\]\(\)]+\]\((?<filename>[a-zA-Z0-9_\/\-]+(?>\.(?>%s))?)\)/m', implode('|', self::SUPPORTED_IMAGES));
         $reUUID4 = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
         $reFilenameWithoutPath = sprintf('/\/eventReports\/viewPicture\/(?<uuid>%s(?>\.(?>%s))?)/', $reUUID4, implode('|', self::SUPPORTED_IMAGES));
-        
+
         // Get all usage of `![]()` and replace it with `<img src="data:image/$ext;base64`
         preg_match_all($rePictureElement, $content, $matches, PREG_SET_ORDER);
         foreach ($matches as $match) {
@@ -695,7 +718,7 @@ class EventReport extends AppModel
             } else {
                 $trueFilename = str_replace('/eventReports/viewPicture/', '', $match['filename']);
             }
-            
+
             try {
                 $file = $this->getPicture($trueFilename);
             } catch (NotFoundException $e) {
@@ -967,12 +990,12 @@ class EventReport extends AppModel
 
         // Sort by original value string length, longest values first
         usort($complexTypeToolResult, function ($a, $b) {
-           $strlenA = strlen($a['original_value']);
-           $strlenB = strlen($b['original_value']);
-           if ($strlenA === $strlenB) {
-               return 0;
-           }
-           return ($strlenA < $strlenB) ? 1 : -1;
+            $strlenA = strlen($a['original_value']);
+            $strlenB = strlen($b['original_value']);
+            if ($strlenA === $strlenB) {
+                return 0;
+            }
+            return ($strlenA < $strlenB) ? 1 : -1;
         });
 
         $suggestionsMapping = [];
@@ -993,7 +1016,8 @@ class EventReport extends AppModel
         ];
     }
 
-    public function injectImportRegexOnComplexTypeToolResult($complexTypeToolResult) {
+    public function injectImportRegexOnComplexTypeToolResult($complexTypeToolResult)
+    {
         foreach ($complexTypeToolResult as $i => $complexTypeToolEntry) {
             $transformedValue = $this->runRegexp($complexTypeToolEntry['default_type'], $complexTypeToolEntry['value']);
             if ($transformedValue !== false) {
@@ -1222,7 +1246,8 @@ class EventReport extends AppModel
         return false;
     }
 
-    public function isFetchURLModuleEnabled($moduleName = 'html_to_markdown') {
+    public function isFetchURLModuleEnabled($moduleName = 'html_to_markdown')
+    {
         $this->Module = ClassRegistry::init('Module');
         $module = $this->Module->getEnabledModule($moduleName, 'expansion');
         return !empty($module) ? $module : false;
@@ -1249,7 +1274,8 @@ class EventReport extends AppModel
         return $results;
     }
 
-    public function isFetchURLModuleEnabledAndAllowed($user, $moduleName = 'html_to_markdown') {
+    public function isFetchURLModuleEnabledAndAllowed($user, $moduleName = 'html_to_markdown')
+    {
         $module = $this->isFetchURLModuleEnabled($moduleName);
         if (empty($module)) {
             return false;
@@ -1327,7 +1353,7 @@ class EventReport extends AppModel
                 'x-api-key' => $apiKey,
             ])
         ];
-        
+
         $response = $HttpSocket->post($url, $data, $request);
         if (!$response->isOk()) {
             $errors[] = __('LLM server failed to process the request, code: %s.', $response->code);
@@ -1338,7 +1364,7 @@ class EventReport extends AppModel
             $errors[] = $data['error'];
             return false;
         }
-/*
+        /*
         debug($data);
         
         $data = array(
@@ -1383,7 +1409,7 @@ class EventReport extends AppModel
         return $report;
     }
 
-    public function uploadPicture($picture, $report, $saveAsAttachmentConfig=false)
+    public function uploadPicture($picture, $report, $saveAsAttachmentConfig = false)
     {
         $saveResult = [
             'success' => false,
@@ -1396,7 +1422,7 @@ class EventReport extends AppModel
             return $saveResult;
         }
 
-        
+
 
         if ($picture['size'] > 0 && $picture['error'] == 0) {
             $extension = pathinfo($picture['name'], PATHINFO_EXTENSION);
@@ -1540,7 +1566,7 @@ class EventReport extends AppModel
                 ]
             ]);
             if (empty($reportCount)) {
-               $this->purgeImage($filename);
+                $this->purgeImage($filename);
             }
         }
     }

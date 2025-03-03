@@ -68,4 +68,78 @@ class EventReportTag extends AppModel
         }
         return $allSaveResult;
     }
+
+    // This function help mirroring the tags at event-report level. It will delete tags that are not present on the remote report
+    public function pruneOutdatedTagsFromSync($newerTags, $originalTags)
+    {
+        $newerTagsName = [];
+        foreach ($newerTags as $tag) {
+            $newerTagsName[] = strtolower($tag['name']);
+        }
+        foreach ($originalTags as $k => $reportTag) {
+            if (!$reportTag['EventReportTag']['local']) { //
+                if (!in_array(strtolower($reportTag['Tag']['name']), $newerTagsName)) {
+                    $this->softDelete($reportTag['EventReportTag']['id']);
+                }
+            }
+        }
+    }
+
+    public function captureEventReportTags($user, $event_report_id, $eventReportTags)
+    {
+        foreach ($eventReportTags as $tag) {
+            $tag_id = $this->Tag->captureTag($tag, $user);
+            if ($tag_id) {
+                $tag['id'] = $tag_id;
+                $isLocal = !empty($eventReportTags['local']) ? $eventReportTags['local'] : false;
+                $this->handleEventReportTag($user, $event_report_id, $tag_id, $isLocal);
+            } else {
+                // If we couldn't attach the tag it is most likely because we couldn't create it - which could have many reasons
+                // However, if a tag couldn't be added, it could also be that the user is a tagger but not a tag editor
+                // In which case if no matching tag is found, no tag ID is returned. Logging these is pointless as it is the correct behaviour.
+                if ($user['Role']['perm_tag_editor']) {
+                    $this->loadLog()->createLogEntry($user, 'capture', 'EventReportTag', $event_report_id, "Failed create or attach Tag {$tag['name']} to the event.");
+                }
+            }
+        }
+    }
+
+    public function handleEventReportTag($user, $event_report_id, $tag_id, $local=false)
+    {
+        if (empty($tag['deleted'])) {
+            $result = $this->attachTags($user, $event_report_id, [$tag_id]);
+        } else {
+            $result = $this->detachTagFromEventReport($event_report_id, $tag_id, $local);
+        }
+        return $result;
+    }
+
+    public function detachTagFromEventReport($event_report_id, $tag_id, $local=false): bool
+    {
+        $conditions = [
+            'tag_id' => $tag_id,
+            'event_report_id' => $event_report_id,
+        ];
+        if (!is_null($local)) {
+            $conditions['local'] = !empty($local);
+        }
+        $existingAssociation = $this->find('first', [
+            'recursive' => -1,
+            'fields' => ['id'],
+            'conditions' => $conditions,
+        ]);
+
+        if ($existingAssociation) {
+            $result = $this->softDelete($existingAssociation['EventTag']['id']);
+            if ($result) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public function softDelete($id)
+    {
+        $this->delete($id);
+    }
 }
