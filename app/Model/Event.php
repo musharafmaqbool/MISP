@@ -1119,6 +1119,8 @@ class Event extends AppModel
         }
         if (isset($data['EventReport']) && empty($data['EventReport'])) {
             unset($data['EventReport']);
+        } else {
+            $data['EventReport'][$key] = $this->__removeNonExportableTags($data['EventReport'][$key], 'EventReport', $server);
         }
         return $data;
     }
