@@ -5049,6 +5049,7 @@ class Server extends AppModel
                 __('Role name') => $user['Role']['name'] ?? __('Unknown, outdated instance'),
                 __('Sync flag') => isset($user['Role']['perm_sync']) ? ($user['Role']['perm_sync'] ? __('Yes') : __('No')) : __('Unknown, outdated instance'),
                 __('Sync Internal flag') => isset($user['Role']['perm_sync_internal']) ? ($user['Role']['perm_sync_internal'] ? __('Yes') : __('No')) : __('Unknown, outdated instance'),
+                __('Sync Authoritative flag') => isset($user['Role']['perm_sync_authoritative']) ? ($user['Role']['perm_sync_authoritative'] ? __('Yes') : __('No')) : __('Unknown, outdated instance'),
             ];
             if ($response->getHeader('X-Auth-Key-Expiration')) {
                 $date = new DateTime($response->getHeader('X-Auth-Key-Expiration'));
