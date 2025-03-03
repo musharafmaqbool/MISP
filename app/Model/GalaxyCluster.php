@@ -795,7 +795,12 @@ class GalaxyCluster extends AppModel
             $cluster['GalaxyCluster']['published'] = false;
         }
         if (empty($existingGalaxyCluster)) {
-            $galaxy = $this->Galaxy->captureGalaxy($user, $cluster['GalaxyCluster']['Galaxy']);
+            $galaxy = $this->Galaxy->captureGalaxy($user, $cluster['GalaxyCluster']['Galaxy'], $fromPull, $orgId, $server);
+            if ($galaxy === false) {
+                $results['errors'][] = __('Could not save Galaxy');
+                $results['failed']++;
+                return $results;
+            }
             $cluster['GalaxyCluster']['galaxy_id'] = $galaxy['Galaxy']['id'];
             unset($cluster['GalaxyCluster']['id']);
             $this->create();
