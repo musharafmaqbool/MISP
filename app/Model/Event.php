@@ -2027,7 +2027,8 @@ class Event extends AppModel
                 ),
                 'EventReport' => array(
                     'conditions' => $conditionsEventReport,
-                    'order' => false
+                    'order' => false,
+                    'EventReportTag',
                 ),
                 'CryptographicKey'
             )
@@ -7520,6 +7521,14 @@ class Event extends AppModel
             }
         }
 
+        if (!empty($event['EventReport'])) {
+            foreach ($event['EventReport'] as $eventReport) {
+                foreach ($eventReport['EventReportTag'] as $eventReportTag) {
+                    $tagIds[$eventReportTag['tag_id']] = true;
+                }
+            }
+        }
+
         $notCachedTags = array_diff_key($tagIds, $this->assetCache['tags'] ?? []);
         if (empty($notCachedTags)) {
             return;
@@ -7538,7 +7547,7 @@ class Event extends AppModel
     }
 
     /**
-     * Attach tags to attributes and event.
+     * Attach tags to attributes, event-reports and event.
      *
      * @param array $event
      * @param bool $justExportable If true, attach just exportable tags.
@@ -7574,6 +7583,23 @@ class Event extends AppModel
                         }
                     }
                     $event['Attribute'][$ak]['AttributeTag'] = array_values($event['Attribute'][$ak]['AttributeTag']);
+                }
+            }
+        }
+        if (!empty($event['EventReport'])) {
+            foreach ($event['EventReport'] as $ek => $eventReport) {
+                if (!empty($eventReport['EventReportTag'])) {
+                    foreach ($eventReport['EventReportTag'] as $etk => $eventReportTag) {
+                        $tag = $this->__getCachedTag($eventReportTag['tag_id'], $justExportable);
+                        if ($tag !== null) {
+                            $tag['local'] = empty($eventReportTag['local']) ? false : true;
+                            $tag['relationship_type'] = empty($eventReportTag['relationship_type']) ? null : $eventReportTag['relationship_type'];
+                            $event['EventReport'][$ek]['EventReportTag'][$etk]['Tag'] = $tag;
+                        } else {
+                            unset($event['EventReport'][$ek]['EventReportTag'][$etk]);
+                        }
+                    }
+                    $event['EventReport'][$ek]['EventReportTag'] = array_values($event['EventReport'][$ek]['EventReportTag']);
                 }
             }
         }
