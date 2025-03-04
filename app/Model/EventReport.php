@@ -175,14 +175,14 @@ class EventReport extends AppModel
                     ) {
                         $existingTags = $this->EventReportTag->find('all', [
                             'recursive' => -1,
-                            'conditions' => ['event_report_id' => $savedReport['id']],
+                            'conditions' => ['event_report_id' => $savedReport['EventReport']['id']],
                             'contain' => [
                                 'Tag' => ['fields' => ['Tag.id', 'Tag.name']],
                             ]
                         ]);
                         $this->EventReportTag->pruneOutdatedTagsFromSync($passedReportTags, $existingTags);
                     }
-                    $this->EventReportTag->captureEventReportTags($user, $savedReport['id'], $passedReportTags);
+                    $this->EventReportTag->captureEventReportTags($user, $savedReport['EventReport']['id'], $passedReportTags);
                 }
             }
             if ($savedReport) {
