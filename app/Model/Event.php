@@ -150,6 +150,7 @@ class Event extends AppModel
         'sgReferenceOnly', // do not fetch additional information about sharing groups
         'flatten',
         'blockedAttributeTags',
+        'blockedEventReportTags',
         'eventsExtendingUuid',
         'extended',
         'extending',
@@ -2216,6 +2217,7 @@ class Event extends AppModel
                     $event['Attribute'] = $this->Feed->attachFeedCorrelations($event['Attribute'], $user, $event['Event'], $overrideLimit, 'Server');
                 }
                 $event = $this->__filterBlockedAttributesByTags($event, $options, $user);
+                $event = $this->__filterBlockedEventReportsByTags($event, $options, $user);
                 if (!$sharingGroupReferenceOnly) {
                     $event['Attribute'] = $this->__attachSharingGroups($event['Attribute'], $sharingGroupData);
                 }
@@ -2664,6 +2666,35 @@ class Event extends AppModel
         return $event;
     }
 
+    // Filter the event-reports within an event based on the tag filter block rules
+    private function __filterBlockedEventReportsByTags($event, $options, $user)
+    {
+        if (!empty($options['blockedEventReportTags'])) {
+            foreach ($options['blockedEventReportTags'] as $key => $blockedTag) {
+                if (!is_numeric($blockedTag)) {
+                    $options['blockedEventReportTags'][$key] = $this->EventReport->EventReportTag->Tag->lookupTagIdFromName($blockedTag);
+                } else {
+                    $options['blockedEventReportTags'][$key] = $blockedTag;
+                }
+            }
+        }
+        if (!empty($user['Server']['push_rules'])) {
+            $push_rules = json_decode($user['Server']['push_rules'], true);
+            if (!empty($push_rules['tags']['NOT'])) {
+                if (empty($options['blockedEventReportTags'])) {
+                    $options['blockedEventReportTags'] = [];
+                }
+                $options['blockedEventReportTags'] = array_merge($options['blockedEventReportTags'], $push_rules['tags']['NOT']);
+            }
+        }
+        if (!empty($options['blockedEventReportTags'])) {
+            if (!empty($event['EventReport'])) {
+                $event['EventReport'] = $this->__filterBlockedEventReportsFromContainer($event['EventReport'], $options['blockedEventReportTags']);
+            }
+        }
+        return $event;
+    }
+
     // accepts an attribute array and a list of blocked tags. Returns the attribute array with the blocked attributes cleaned out.
     private function __filterBlockedAttributesFromContainer($container, $blockedTags)
     {
@@ -2671,6 +2702,22 @@ class Event extends AppModel
             if (!empty($attribute['AttributeTag'])) {
                 foreach ($attribute['AttributeTag'] as $at) {
                     if (in_array($at['tag_id'], $blockedTags)) {
+                        unset($container[$key]);
+                    }
+                }
+            }
+        }
+        $container = array_values($container);
+        return $container;
+    }
+
+    // accepts an event-report array and a list of blocked tags. Returns the event-report array with the blocked reports cleaned out.
+    private function __filterBlockedEventReportsFromContainer($container, $blockedTags)
+    {
+        foreach ($container as $key => $eventReport) {
+            if (!empty($eventReport['EventReportTag'])) {
+                foreach ($eventReport['EventReportTag'] as $ev) {
+                    if (in_array($ev['tag_id'], $blockedTags)) {
                         unset($container[$key]);
                     }
                 }
@@ -4736,6 +4783,7 @@ class Event extends AppModel
                     $pushRules = json_decode($server['Server']['push_rules'], true);
                     if (!empty($pushRules['tags']['NOT'])) {
                         $params['blockedAttributeTags'] = $pushRules['tags']['NOT'];
+                        $params['blockedEventReportTags'] = $pushRules['tags']['NOT'];
                     }
                 }
                 if (!empty($server['Server']['internal'])) {
@@ -7722,6 +7770,7 @@ class Event extends AppModel
             $filters['eventid'] = $chunk;
             if (!empty($filters['tags']['NOT'])) {
                 $filters['blockedAttributeTags'] = $filters['tags']['NOT'];
+                $filters['blockedEventReportTags'] = $filters['tags']['NOT'];
                 unset($filters['tags']['NOT']);
             }
             $result = $this->fetchEvent($user, $filters, true);
