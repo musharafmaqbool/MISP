@@ -60,7 +60,7 @@ class EventReportTag extends AppModel
                 $saveResult = $this->save(['event_report_id' => $eventReportID, 'tag_id' => $tagId, 'local' => $local]);
                 if (!$saveResult) {
                     $allSaveResult['fails'] += 1;
-                    $this->Log->createLogEntry($user, 'attachTags', 'EventReportTag', 0, __('Could not attach %s tag %s', (empty($local) ? 'global' : 'local'), $tagId), __('event-report (%s)', $eventReportID));
+                    $this->loadLog()->createLogEntry($user, 'attachTags', 'EventReportTag', 0, __('Could not attach %s tag %s', (empty($local) ? 'global' : 'local'), $tagId), __('event-report (%s)', $eventReportID));
                 } else {
                     $allSaveResult['successes'] += 1;
                 }
