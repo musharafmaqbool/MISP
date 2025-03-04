@@ -107,7 +107,7 @@ class EventReportTag extends AppModel
     public function handleEventReportTag($user, $event_report_id, $tag_id, $local=false)
     {
         if (empty($tag['deleted'])) {
-            $result = $this->attachTags($user, $event_report_id, [$tag_id]);
+            $result = $this->attachTags($user, $event_report_id, [$tag_id], $local);
         } else {
             $result = $this->detachTagFromEventReport($event_report_id, $tag_id, $local);
         }
