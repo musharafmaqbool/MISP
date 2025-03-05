@@ -70,17 +70,15 @@ class EventReportTag extends AppModel
     }
 
     // This function help mirroring the tags at event-report level. It will delete tags that are not present on the remote report
-    public function pruneOutdatedTagsFromSync($newerTags, $originalTags)
+    public function pruneOutdatedTagsFromSync($newerTags, $originalGlobalTags)
     {
         $newerTagsName = [];
         foreach ($newerTags as $tag) {
             $newerTagsName[] = strtolower($tag['name']);
         }
-        foreach ($originalTags as $k => $reportTag) {
-            if (!$reportTag['EventReportTag']['local']) { //
-                if (!in_array(strtolower($reportTag['Tag']['name']), $newerTagsName)) {
-                    $this->softDelete($reportTag['EventReportTag']['id']);
-                }
+        foreach ($originalGlobalTags as $k => $reportTag) {
+            if (!in_array(strtolower($reportTag['Tag']['name']), $newerTagsName)) {
+                $this->softDelete($reportTag['EventReportTag']['id']);
             }
         }
     }

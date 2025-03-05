@@ -4434,14 +4434,17 @@ class Event extends AppModel
                     (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) ||
                     ($user['Role']['perm_sync'] && !empty($user['Role']['perm_sync_authoritative']))
                 ) {
-                    $existingTags = $this->EventTag->find('all', [
+                    $existingGlobalTags = $this->EventTag->find('all', [
                         'recursive' => -1,
-                        'conditions' => ['event_id' => $this->id],
+                        'conditions' => [
+                            'event_id' => $this->id,
+                            'local' => 0,
+                        ],
                         'contain' => [
                             'Tag' => ['fields' => ['Tag.id', 'Tag.name']]
                         ]
                     ]);
-                    $this->EventTag->pruneOutdatedEventTagsFromSync(isset($data['Event']['Tag']) ? $data['Event']['Tag'] : [], $existingTags);
+                    $this->EventTag->pruneOutdatedEventTagsFromSync(isset($data['Event']['Tag']) ? $data['Event']['Tag'] : [], $existingGlobalTags);
                 }
                 foreach ($data['Event']['Tag'] as $tag) {
                     $tag_id = $this->EventTag->Tag->captureTag($tag, $user);

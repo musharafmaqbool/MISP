@@ -173,14 +173,17 @@ class EventReport extends AppModel
                         (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) ||
                         ($user['Role']['perm_sync'] && !empty($user['Role']['perm_sync_authoritative']))
                     ) {
-                        $existingTags = $this->EventReportTag->find('all', [
+                        $existingGlobalTags = $this->EventReportTag->find('all', [
                             'recursive' => -1,
-                            'conditions' => ['event_report_id' => $savedReport['EventReport']['id']],
+                            'conditions' => [
+                                'event_report_id' => $savedReport['EventReport']['id'],
+                                'local' => 0,
+                            ],
                             'contain' => [
                                 'Tag' => ['fields' => ['Tag.id', 'Tag.name']],
                             ]
                         ]);
-                        $this->EventReportTag->pruneOutdatedTagsFromSync($passedReportTags, $existingTags);
+                        $this->EventReportTag->pruneOutdatedTagsFromSync($passedReportTags, $existingGlobalTags);
                     }
                     $this->EventReportTag->captureEventReportTags($user, $savedReport['EventReport']['id'], $passedReportTags);
                 }
