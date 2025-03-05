@@ -3031,19 +3031,15 @@ class Event extends AppModel
             foreach (['OR', 'AND', 'NOT'] as $operand) {
                 if (!empty($params[$options['filter']][$operand])) {
                     foreach ($params[$options['filter']][$operand] as $k => $v) {
-                        if ($operand === 'NOT') {
-                            $v = mb_substr($v, 1);
-                        }
                         if (filter_var($v, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6)) {
                             $v = $this->compressIpv6($v);
                         }
-                        $params[$options['filter']][$operand][$k] = $operand === 'NOT' ? '!' . $v : $v;
+                        $params[$options['filter']][$operand][$k] = $v;
                     }
                 }
             }
             $conditions = $this->generic_add_filter($conditions, $params['value'], ['Attribute.value1', 'Attribute.value2']);
         }
-
         return $conditions;
     }
 
