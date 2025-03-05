@@ -359,7 +359,7 @@ class EventReport extends AppModel
                         'OR' => array(
                             'Event.org_id' => $user['org_id'],
                             'EventReport.distribution' => array('1', '2', '3', '5'),
-                            'AND ' => array(
+                            'AND' => array(
                                 'EventReport.distribution' => 4,
                                 'EventReport.sharing_group_id' => $sgids,
                             )
@@ -394,7 +394,7 @@ class EventReport extends AppModel
             if (!$user['Role']['perm_site_admin'] && $event['Event']['org_id'] != $user['org_id']) {
                 $conditions['AND'][] = [
                     'EventReport.distribution' => [1, 2, 3, 5],
-                    'AND ' => [
+                    'AND' => [
                         'EventReport.distribution' => 4,
                         'EventReport.sharing_group_id' => $sgids,
                     ]
