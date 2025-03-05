@@ -100,6 +100,13 @@ class GalaxyCluster extends AppModel
         'json' => array('json', 'JsonExport', 'json'),
     );
 
+    public function __construct($id = false, $table = null, $ds = null)
+    {
+        parent::__construct();
+        $this->schema();
+        $this->_schema['distribution']['default'] = Configure::read('MISP.default_galaxy_distribution') ?? 1;
+    }
+
     public function beforeValidate($options = array())
     {
         $cluster = &$this->data['GalaxyCluster'];
