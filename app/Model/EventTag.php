@@ -173,17 +173,15 @@ class EventTag extends AppModel
     }
 
     // This function help mirroring the tags at event level. It will delete tags that are not present on the receiving event
-    public function pruneOutdatedEventTagsFromSync($newerTags, $originalEventTags)
+    public function pruneOutdatedEventTagsFromSync($newerTags, $originalGlobalEventTags)
     {
         $newerTagsName = [];
         foreach ($newerTags as $tag) {
             $newerTagsName[] = strtolower($tag['name']);
         }
-        foreach ($originalEventTags as $k => $eventTag) {
-            if (!$eventTag['EventTag']['local']) { //
-                if (!in_array(strtolower($eventTag['Tag']['name']), $newerTagsName)) {
-                    $this->softDelete($eventTag['EventTag']['id']);
-                }
+        foreach ($originalGlobalEventTags as $k => $eventTag) {
+            if (!in_array(strtolower($eventTag['Tag']['name']), $newerTagsName)) {
+                $this->softDelete($eventTag['EventTag']['id']);
             }
         }
     }

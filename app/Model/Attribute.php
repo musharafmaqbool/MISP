@@ -2915,14 +2915,17 @@ class Attribute extends AppModel
                     (isset($server) && isset($server['Server']['remove_missing_tags']) && $server['Server']['remove_missing_tags']) ||
                     ($user['Role']['perm_sync'] && !empty($user['Role']['perm_sync_authoritative']))
                 ) {
-                    $existingTags = $this->AttributeTag->find('all', [
+                    $existingGlobalTags = $this->AttributeTag->find('all', [
                         'recursive' => -1,
-                        'conditions' => ['attribute_id' => $attribute['id']],
+                        'conditions' => [
+                            'attribute_id' => $attribute['id'],
+                            'local' => 0,
+                        ],
                         'contain' => array(
                             'Tag' => array('fields' => array('Tag.id', 'Tag.name'))
                         )
                     ]);
-                    $this->AttributeTag->pruneOutdatedAttributeTagsFromSync(isset($attribute['Tag']) ? $attribute['Tag'] : array(), $existingTags);
+                    $this->AttributeTag->pruneOutdatedAttributeTagsFromSync(isset($attribute['Tag']) ? $attribute['Tag'] : array(), $existingGlobalTags);
                 }
                 $tag_id_store = [];
                 if (isset($attribute['Tag'])) {
