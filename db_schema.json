@@ -6893,6 +6893,28 @@
                 "column_type": "tinyint(1)",
                 "column_default": "0",
                 "extra": ""
+            },
+            {
+                "column_name": "perm_sync_internal",
+                "is_nullable": "NO",
+                "data_type": "tinyint",
+                "character_maximum_length": null,
+                "numeric_precision": "3",
+                "collation_name": null,
+                "column_type": "tinyint(1)",
+                "column_default": "0",
+                "extra": ""
+            },
+            {
+                "column_name": "perm_sync_authoritative",
+                "is_nullable": "NO",
+                "data_type": "tinyint",
+                "character_maximum_length": null,
+                "numeric_precision": "3",
+                "collation_name": null,
+                "column_type": "tinyint(1)",
+                "column_default": "0",
+                "extra": ""
             }
         ],
         "servers": [
@@ -8653,6 +8675,17 @@
                 "collation_name": "ascii_general_ci",
                 "column_type": "varchar(40)",
                 "column_default": "NULL",
+                "extra": ""
+            },
+            {
+                "column_name": "skip_proxy",
+                "is_nullable": "NO",
+                "data_type": "tinyint",
+                "character_maximum_length": null,
+                "numeric_precision": "3",
+                "collation_name": null,
+                "column_type": "tinyint(1)",
+                "column_default": "0",
                 "extra": ""
             }
         ],
@@ -10980,5 +11013,5 @@
             "uuid": false
         }
     },
-    "db_version": "134"
+    "db_version": "136"
 }
