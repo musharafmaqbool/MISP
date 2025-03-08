@@ -301,7 +301,7 @@ class Server extends AppModel
      * @param array $pullRules
      * @return bool Return true if event was emptied by pull rules
      */
-    private function __updatePulledEventBeforeInsert(array &$event, array $server, array $user, array $pullRules)
+    private function __updatePulledEventBeforeInsert(array &$event, array $server, array $user, array $pullRules, $remoteUser = false)
     {
         $pullRulesEmptiedEvent = false;
         // we have an Event array
@@ -311,7 +311,7 @@ class Server extends AppModel
             $event['Event']['distribution'] = '1';
         }
         // Distribution
-        if (empty(Configure::read('MISP.host_org_id')) || !$server['Server']['internal'] ||  Configure::read('MISP.host_org_id') != $server['Server']['org_id']) {
+        if (empty(Configure::read('MISP.host_org_id')) || !$server['Server']['internal'] ||  Configure::read('MISP.host_org_id') != $server['Server']['org_id'] || empty($remoteUser['Role']['perm_sync_internal'])) {
             switch ($event['Event']['distribution']) {
                 case 1:
                     // if community only, downgrade to org only after pull
@@ -572,7 +572,8 @@ class Server extends AppModel
             return false;
         }
 
-        $pullRulesEmptiedEvent = $this->__updatePulledEventBeforeInsert($event, $serverSync->server(), $user, $serverSync->pullRules());
+        $remoteUser = $serverSync->cachedUserInfo();
+        $pullRulesEmptiedEvent = $this->__updatePulledEventBeforeInsert($event, $serverSync->server(), $user, $serverSync->pullRules(), $remoteUser);
 
         if (!$this->__checkIfEventSaveAble($event)) {
             if (!$pullRulesEmptiedEvent) { // The event is empty because of the filtering rule. This is not considered a failure
@@ -5047,6 +5048,8 @@ class Server extends AppModel
                 __('User') => $user['User']['email'],
                 __('Role name') => $user['Role']['name'] ?? __('Unknown, outdated instance'),
                 __('Sync flag') => isset($user['Role']['perm_sync']) ? ($user['Role']['perm_sync'] ? __('Yes') : __('No')) : __('Unknown, outdated instance'),
+                __('Sync Internal flag') => isset($user['Role']['perm_sync_internal']) ? ($user['Role']['perm_sync_internal'] ? __('Yes') : __('No')) : __('Unknown, outdated instance'),
+                __('Sync Authoritative flag') => isset($user['Role']['perm_sync_authoritative']) ? ($user['Role']['perm_sync_authoritative'] ? __('Yes') : __('No')) : __('Unknown, outdated instance'),
             ];
             if ($response->getHeader('X-Auth-Key-Expiration')) {
                 $date = new DateTime($response->getHeader('X-Auth-Key-Expiration'));
@@ -5813,6 +5816,19 @@ class Server extends AppModel
                 'default_analyst_data_distribution' => array(
                     'level' => 1,
                     'description' => __('The default distribution setting for analyst-data (notes, opinions, ...) (0-3)'),
+                    'value' => '1',
+                    'test' => 'testForEmpty',
+                    'type' => 'string',
+                    'options' => array(
+                        '0' => __('Your organisation only'),
+                        '1' => __('This community only'),
+                        '2' => __('Connected communities'),
+                        '3' => __('All communities'),
+                    ),
+                ),
+                'default_galaxy_distribution' => array(
+                    'level' => 1,
+                    'description' => __('The default distribution setting for Galaxies and Clusters (0-3)'),
                     'value' => '1',
                     'test' => 'testForEmpty',
                     'type' => 'string',
