@@ -129,7 +129,7 @@ class WorkflowBaseModule
             ])
         ];
         $result = $mispModule->queryModuleServer($postData, false, 'Enrichment', false, [], true);
-        if (!empty($result['error'])) {
+        if (!empty($result['error']) || $result === false) {
             return '';
         }
         $rendered = $result['results'][0]['values'][0];
