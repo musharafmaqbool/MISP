@@ -271,15 +271,19 @@ class GraphWalker
 class WorkflowRoamingData
 {
     private $workflow_user;
+    private $initiator_user_id;
+    private $initiator_user;
     private $data;
     private $workflow;
     private $current_node;
     private $trigger_node;
     private $workflowModel;
+    private $User;
 
-    public function __construct(array $workflow_user, array $data, array $workflow, int $current_node, $trigger_node)
+    public function __construct(array $workflow_user, array $data, array $workflow, int $current_node, $trigger_node, $initiator_user_id)
     {
         $this->workflow_user = $workflow_user;
+        $this->initiator_user_id = $initiator_user_id;
         $this->data = $data;
         $this->workflow = $workflow;
         $this->current_node = $current_node;
@@ -289,6 +293,21 @@ class WorkflowRoamingData
     public function getUser(): array
     {
         return $this->workflow_user;
+    }
+
+    public function getInitiatorUser(): array
+    {
+        if (!empty($this->initiator_user)) {
+            return $this->initiator_user;
+        }
+        $this->User = ClassRegistry::init('User');
+        $this->initiator_user = $this->User->find('first', [
+            'conditions' => [
+                'id' =>  $this->initiator_user_id,
+            ],
+            'recursive' => -1,
+        ]);
+        return $this->initiator_user;
     }
 
     public function getData(): array
@@ -536,9 +555,9 @@ class WorkflowGraphTool
         return -1;
     }
 
-    public static function getRoamingData(array $user=[], array $data=[], array $workflow=[], int $node_id=-1, array $trigger_node = null)
+    public static function getRoamingData(array $user=[], array $data=[], array $workflow=[], int $node_id=-1, array $trigger_node = null, $initiatorUserId = false)
     {
-        return new WorkflowRoamingData($user, $data, $workflow, $node_id, $trigger_node);
+        return new WorkflowRoamingData($user, $data, $workflow, $node_id, $trigger_node, $initiatorUserId);
     }
 
     public static function getWalkerIterator(array $graphData, $WorkflowModel, $startNodeID, $path_type=null, WorkflowRoamingData $roamingData)
