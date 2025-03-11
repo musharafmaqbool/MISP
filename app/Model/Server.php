@@ -3695,7 +3695,7 @@ class Server extends AppModel
             $result[$package]['version'] = $scriptResult[$package];
             $result[$package]['expected'] = $expectedVersion;
             if ($expectedVersion[0] === '>') {
-                $result[$package]['status'] = version_compare($result[$package]['version'], trim($expectedVersion, '>')) >= 0 ? 1 : 0;
+                $result[$package]['status'] = version_compare($result[$package]['version'], trim($expectedVersion, '>=')) >= 0 ? 1 : 0;
             } else {
                 $result[$package]['status'] = $result[$package]['version'] === $expectedVersion ? 1 : 0;
             }
