@@ -2294,13 +2294,15 @@ class User extends AppModel
 
     public function collectNotificationToastForUser(array $user): array
     {
-        $redis = $this->setupRedis();
-        if ($redis !== false) {
-            $redisNotificationKey = 'misp:user_toast_notification:' . $user['User']['id'];
-            $flashMessages = $redis->smembers($redisNotificationKey);
-            $redis->del($redisNotificationKey);
-            $flashMessages = array_map('RedisTool::deserialize', $flashMessages);
-            return $flashMessages;
+        if (!is_null($user['User'])) {
+            $redis = $this->setupRedis();
+            if ($redis !== false) {
+                $redisNotificationKey = 'misp:user_toast_notification:' . $user['User']['id'];
+                $flashMessages = $redis->smembers($redisNotificationKey);
+                $redis->del($redisNotificationKey);
+                $flashMessages = array_map('RedisTool::deserialize', $flashMessages);
+                return $flashMessages;
+            }
         }
         return []; 
     }
