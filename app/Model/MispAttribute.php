@@ -1647,7 +1647,7 @@ class MispAttribute extends AppModel
                         [
                             'OR' => [
                                 'Attribute.distribution' => [1, 2, 3, 5],
-                                'AND '=> [
+                                'AND' => [
                                     'Attribute.distribution' => 4,
                                     'Attribute.sharing_group_id' => $sgids,
                                 ]
