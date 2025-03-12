@@ -4,6 +4,9 @@ App::uses('AppModel', 'Model');
 
 class ObjectRelationship extends AppModel
 {
+
+    private $ObjectReference;
+
     public $actsAs = array(
             'Containable',
             'SysLogLogable.SysLogLogable' => array(	// TODO Audit, logable
@@ -51,5 +54,21 @@ class ObjectRelationship extends AppModel
             }
         }
         return true;
+    }
+
+    public function getUsage(): array
+    {
+        $this->ObjectReference = ClassRegistry::init('ObjectReference');
+        $this->Tag = ClassRegistry::init('Tag');
+        $this->Relationship = ClassRegistry::init('Relationship');
+        $objectCount = $this->ObjectReference->countForObject();
+        $tagCount = $this->Tag->countRelationships();
+        $analystRelationshipCount = $this->Relationship->countRelationships();
+        return [
+            'object_reference' => $objectCount,
+            'tag_relationship' => $tagCount['all'],
+            'analyst_relationship' => $analystRelationshipCount,
+            'total' => $objectCount + $tagCount['all'] + $analystRelationshipCount,
+        ];
     }
 }
