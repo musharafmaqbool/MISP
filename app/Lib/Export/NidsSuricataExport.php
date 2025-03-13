@@ -134,7 +134,7 @@ class NidsSuricataExport extends NidsExport
                     $data['path'] = NidsExport::replaceIllegalChars($data['host']);
                     $content = 'tls.sni; content:"' . $data['host'] . '"; nocase;';
                 } else {
-                    $content = 'tls.sni; content:"' . $data['host'] . '"; fast_pattern; nocase; https.uri; content:"' . $data['path'] . '"; nocase;';
+                    $createRule = false;
                 }
                 break;
 
