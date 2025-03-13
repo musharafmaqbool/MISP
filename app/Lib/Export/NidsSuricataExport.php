@@ -130,7 +130,12 @@ class NidsSuricataExport extends NidsExport
                 $suricata_src_port = 'any';
                 $suricata_dst_ip = '$EXTERNAL_NET';
                 $suricata_dst_port = NidsExport::getProtocolPort($scheme, $data['port']);
-                $content = 'tls.sni; content:"' . $data['host'] . '";';
+                if (!array_key_exists('path', $data)) {
+                    $data['path'] = NidsExport::replaceIllegalChars($data['host']);
+                    $content = 'tls.sni; content:"' . $data['host'] . '"; nocase;';
+                } else {
+                    $content = 'tls.sni; content:"' . $data['host'] . '"; fast_pattern; nocase; https.uri; content:"' . $data['path'] . '"; nocase;';
+                }
                 break;
 
             case "ssh":
