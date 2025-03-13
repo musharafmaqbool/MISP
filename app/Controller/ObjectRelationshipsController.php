@@ -81,7 +81,13 @@ class ObjectRelationshipsController extends AppController
 
     public function edit($id)
     {
-        $params = [];
+        $params = [
+            'beforeSave' => function ($relationship) {
+                $relationship['ObjectRelationship']['version'] = (new DateTime())->getTimestamp();
+                return $relationship;
+            },
+            'fields' => ['name', 'description', 'highlighted',]
+        ];
         $this->CRUD->edit($id, $params);
         if ($this->restResponsePayload) {
             return $this->restResponsePayload;

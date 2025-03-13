@@ -37,6 +37,16 @@ class ObjectRelationship extends AppModel
         return $results;
     }
 
+    public function beforeSave($options = [])
+    {
+        parent::beforeSave($options);
+        if (!empty($this->data[$this->alias]['format']) && is_array($this->data[$this->alias]['format'])) {
+            $this->data[$this->alias]['format'] = JsonTool::encode($this->data[$this->alias]['format']);
+        }
+        return true;
+    }
+
+
     public function update()
     {
         $relationsFile = APP . 'files/misp-objects/relationships/definition.json';
