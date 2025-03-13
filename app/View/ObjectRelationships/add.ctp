@@ -10,6 +10,10 @@ $fields = [
         'class' => 'span6',
         'type' => 'editor'
     ],
+    [
+        'field' => 'highlighted',
+        'type' => 'checkbox',
+    ],
 ];
 
 echo $this->element('genericElements/Form/genericForm', [
