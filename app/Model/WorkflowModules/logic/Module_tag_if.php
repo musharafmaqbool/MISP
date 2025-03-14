@@ -57,8 +57,10 @@ class Module_tag_if extends WorkflowBaseLogicModule
                 'type' => 'select',
                 'options' => [
                     'event' => __('Event'),
-                    'attribute' => __('Attribute'),
-                    'event_attribute' => __('Inherited Attribute'),
+                    'attribute' => __('Any Attribute'),
+                    'event_attribute' => __('Any Inherited Attribute'),
+                    'event_report' => __('Event Report'),
+                    'inherited_report' => __('Inherited Event Report'),
                 ],
                 'default' => 'event',
             ],
@@ -114,6 +116,10 @@ class Module_tag_if extends WorkflowBaseLogicModule
             $path = 'Event._AttributeFlattened.{n}.Tag.{n}.name';
         } elseif ($scope == 'event_attribute') {
             $path = 'Event._AttributeFlattened.{n}._allTags.{n}.name';
+        } else if ($scope == 'event_report') {
+            $path = 'Event.EventReport.{n}.Tag.{n}.name';
+        } else if ($scope == 'inherited_report') {
+            $path = 'Event.EventReport.{n}._allTags.{n}.name';
         } else {
             $path = 'Event.Tag.{n}.name';
         }
