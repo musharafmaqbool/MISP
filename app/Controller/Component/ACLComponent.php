@@ -535,6 +535,13 @@ class ACLComponent extends Component
         'objectTemplateElements' => array(
             'viewElements' => array('*')
         ),
+        'objectRelationships' => array(
+            'index' => array('*'),
+            'add' => array(),
+            'delete' => array(),
+            'edit' => array(),
+            'toggleHighlighted' => array(),
+        ),
         'orgBlocklists' => array(
             'add' => array(),
             'delete' => array(),

@@ -398,6 +398,12 @@ class AppController extends Controller
                 }
             }
         }
+        $notificationToasts = $this->User->collectNotificationToastForUser(['User' => $user]);
+        if (!empty($notificationToasts)) {
+            foreach ($notificationToasts as $notificationToast) {
+                $this->Flash->set($notificationToast['message'], $notificationToast);
+            }
+        }
         if (Configure::read('MISP.enable_automatic_garbage_collection') && mt_rand(1,100) % 100 == 0) {
             $this->loadModel('AdminSetting');
             $this->AdminSetting->garbageCollect();
