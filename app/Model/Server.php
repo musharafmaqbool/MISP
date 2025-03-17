@@ -2973,7 +2973,7 @@ class Server extends AppModel
         if ($response === false && $localVersion['hotfix'] < $remoteVersion[2]) {
             $response = "Sync to Server ('{$server['Server']['id']}') initiated, but the remote instance is a few hotfixes ahead. Make sure you keep your instance up to date!";
         }
-        if (empty($response) && $remoteVersion[2] < 111) {
+        if (empty($response) && $remoteVersion[1] <= 4 && $remoteVersion[2] < 111) {
             $response = "Sync to Server ('{$server['Server']['id']}') initiated, but version 2.4.111 is required in order to be able to pull proposals from the remote side.";
         }
 
