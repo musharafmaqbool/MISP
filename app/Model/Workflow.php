@@ -1693,6 +1693,7 @@ class Workflow extends AppModel
                 'saved_filters' => $module_config['saved_filters'],
                 'module_data' => $module_config,
                 'expect_misp_core_format' => $module_config['expect_misp_core_format'],
+                'is_filtering' => $module_config['isFiltering'],
             ],
             'inputs' => [],
             'outputs' => [],

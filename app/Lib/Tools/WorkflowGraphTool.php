@@ -164,7 +164,7 @@ class GraphWalker
         } else if ($node['data']['id'] == 'concurrent-task') {
             $this->_evaluateConcurrentTask($node, $roamingData, $outputs['output_1']);
             return ['output_1' => []];
-        } else if ($node['data']['id'] == 'generic-filter-data') {
+        } else if (!empty($node['data']['isFiltering'])) {
             $this->_evaluateFilterAddLogic($node, $roamingData, $outputs['output_1']);
             return ['output_1' => $outputs['output_1']];
         } else if ($node['data']['id'] == 'generic-filter-reset') {
@@ -472,8 +472,10 @@ class WorkflowGraphTool
     {
         $graphData = self::cleanGraphData($graphData);
         $nodes = [];
+        $workflowModel = ClassRegistry::init('Workflow');
         foreach ($graphData as $i => $node) {
-            if ($node['data']['module_type'] == 'logic' && $node['data']['id'] == 'generic-filter-data') {
+            $moduleClass = $workflowModel->getModuleClass($node);
+            if ($node['data']['module_type'] == 'logic' && !empty($moduleClass->isFiltering)) {
                 if (!empty($fullNode)) {
                     $nodes[] = $node;
                 } else {
