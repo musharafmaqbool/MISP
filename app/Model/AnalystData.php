@@ -253,7 +253,7 @@ class AnalystData extends AppModel
             if (!isset($analystData['Orgc'])) {
                 $orgFound = $this->Orgc->find('first', ['conditions' => ['uuid' => $analystData[$this->alias]['orgc_uuid']]]);
                 if (!empty($orgFound)) {
-                    $analystData[$this->alias]['Orgc'] = $orgFound;
+                    $analystData[$this->alias]['Orgc'] = $orgFound['Organisation'];
                 }
             } else {
                 $analystData[$this->alias]['Orgc'] = $analystData['Orgc'];
@@ -264,7 +264,7 @@ class AnalystData extends AppModel
             if (!isset($analystData['Org'])) {
                 $orgFound = $this->Org->find('first', ['conditions' => ['uuid' => $analystData[$this->alias]['org_uuid']]]);
                 if (!empty($orgFound)) {
-                    $analystData[$this->alias]['Org'] = $orgFound;
+                    $analystData[$this->alias]['Org'] = $orgFound['Organisation'];
                 }
             } else {
                 $analystData[$this->alias]['Org'] = $analystData['Org'];
