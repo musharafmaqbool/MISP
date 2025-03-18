@@ -2,6 +2,7 @@
 import sys
 import json
 import importlib
+from pathlib import Path
 MODULE_TO_DIRECTORY = {
     "stix2": "cti-python-stix2",
     "stix": "python-stix",
