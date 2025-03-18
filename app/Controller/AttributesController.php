@@ -82,7 +82,7 @@ class AttributesController extends AppController
         if (!$this->_isRest()) {
             $params = array_merge_recursive($params, $this->paginate);
         }
-        $params['conditions']['AND'][] = $this->Attribute->buildConditions($user);
+        $params['conditions']['AND'][] = $this->MispAttribute->buildConditions($user);
         $paramArray = [
             'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'limit', 'page', 'sort', 'direction'
         ];
@@ -98,8 +98,8 @@ class AttributesController extends AppController
         $filters = $this->cleanDefaultFormValues($filters);
         $request_filters = $filters;
         $conditions = $this->paginate['conditions'];
-        $subqueryElements = $this->Attribute->Event->harvestSubqueryElements($filters);
-        $filters = $this->Attribute->Event->addFiltersFromSubqueryElements($filters, $subqueryElements, $user);
+        $subqueryElements = $this->MispAttribute->Event->harvestSubqueryElements($filters);
+        $filters = $this->MispAttribute->Event->addFiltersFromSubqueryElements($filters, $subqueryElements, $user);
         $request_filters = $filters;
         $params = array_merge($filters, [
             'limit' => $this->paginate['limit'] ?? null,
@@ -109,7 +109,7 @@ class AttributesController extends AppController
             $params['deleted'] = 1;
         }
         $this->set('params', $params);
-        $conditions = $this->Attribute->buildFilterConditions($user, $filters, false);
+        $conditions = $this->MispAttribute->buildFilterConditions($user, $filters, false);
         $params = [];
         if (!empty($filters['direction'])) {
             $params['direction'] = $filters['direction'];
@@ -132,12 +132,12 @@ class AttributesController extends AppController
             if (!empty($filters['limit'])) {
                 $params['limit'] = $filters['limit'];
             }
-            $attributes = $this->Attribute->fetchAttributes($user, $params);
+            $attributes = $this->MispAttribute->fetchAttributes($user, $params);
         } else {
             $params['page'] = !empty($filters['page']) ? $filters['page'] : 1;
             $params['limit'] = !empty($filters['limit']) ? $filters['limit'] : 60;
             $this->paginate['conditions'] = $conditions;
-            $attributes = $this->Attribute->fetchAttributes($user, $params);
+            $attributes = $this->MispAttribute->fetchAttributes($user, $params);
             App::uses('CustomPaginationTool', 'Tools');
             $customPagination = new CustomPaginationTool();
             $params = $customPagination->createPaginationRules($attributes, $params, $this->modelClass);
@@ -151,7 +151,7 @@ class AttributesController extends AppController
             if (count($parts) == 2) {
                 $url['?'] = $parts[1];
             }
-            $this->Attribute->attachTagsToAttributes($attributes, ['includeAllTags' => true]);
+            $this->MispAttribute->attachTagsToAttributes($attributes, ['includeAllTags' => true]);
         }
 
         if ($this->_isRest()) {
@@ -185,7 +185,7 @@ class AttributesController extends AppController
         }
 
         list($attributes, $sightingsData) = $this->__searchUI($attributes, $user);
-        $exports = array_keys($this->Attribute->validFormats);
+        $exports = array_keys($this->MispAttribute->validFormats);
         $this->set('paramArray', array_merge($paramArray, ['?']));
         $this->set('exports', $exports);
         $request_filters = array_diff_key($request_filters, array_flip(['direction', 'page', 'limit', 'sort']));
@@ -1635,26 +1635,26 @@ class AttributesController extends AppController
             // This functionality no longer does any searching, pass it simply on to the index method
             return call_user_func_array([$this, 'index'], func_get_args());
         }
-        $orgTable = $this->Attribute->Event->Orgc->find('all', [
+        $orgTable = $this->MispAttribute->Event->Orgc->find('all', [
             'fields' => ['Orgc.id', 'Orgc.name', 'Orgc.uuid'],
         ]);
-        $types = $this->_arrayToValuesIndexArray(array_keys($this->Attribute->typeDefinitions));
+        $types = $this->_arrayToValuesIndexArray(array_keys($this->MispAttribute->typeDefinitions));
         ksort($types);
         $this->set('types', array_merge(['ALL' => 'ALL'], $types));
-        $categories = array_merge(['ALL' => 'ALL'], $this->_arrayToValuesIndexArray(array_keys($this->Attribute->categoryDefinitions)));
+        $categories = array_merge(['ALL' => 'ALL'], $this->_arrayToValuesIndexArray(array_keys($this->MispAttribute->categoryDefinitions)));
         $this->set('categories', $categories);
-        $categoryDefinition = $this->Attribute->categoryDefinitions;
-        $categoryDefinition = array_merge(["ALL" => ['types' => array_keys($this->Attribute->typeDefinitions), 'formdesc' => '']], $categoryDefinition);
+        $categoryDefinition = $this->MispAttribute->categoryDefinitions;
+        $categoryDefinition = array_merge(["ALL" => ['types' => array_keys($this->MispAttribute->typeDefinitions), 'formdesc' => '']], $categoryDefinition);
         foreach ($categoryDefinition as &$def) {
             $def['types'] = array_merge(['ALL'], $def['types']);
         }
         $this->set('categoryDefinitions', $categoryDefinition);
-        $this->set('typeDefinitions', $this->Attribute->typeDefinitions);
+        $this->set('typeDefinitions', $this->MispAttribute->typeDefinitions);
         $this->set('fieldDesc', $this->__fieldDesc());
         $this->set('orgTable', array_column($orgTable, 'name', 'id'));
-        $this->set('attrDescriptions', $this->Attribute->fieldDescriptions);
-        $this->set('shortDist', $this->Attribute->shortDist);
-        $this->set('distributionLevels', $this->Attribute->distributionLevels);
+        $this->set('attrDescriptions', $this->MispAttribute->fieldDescriptions);
+        $this->set('shortDist', $this->MispAttribute->shortDist);
+        $this->set('distributionLevels', $this->MispAttribute->distributionLevels);
         $this->render('search');
     }
 
