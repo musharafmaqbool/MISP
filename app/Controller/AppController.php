@@ -1121,6 +1121,11 @@ class AppController extends Controller
                 }
             }
         }
+        if (!empty($options['request']->query)) {
+            foreach ($options['request']->query as $k => $v) {
+                $data[$k] = $v;
+            }
+        }
         foreach ($data as &$v) {
             if (is_string($v)) {
                 $v = trim($v);
@@ -1451,7 +1456,13 @@ class AppController extends Controller
                 $this->RestResponse->signContents = true;
             }
             $filename = $this->RestSearch->getFilename($filters, $scope, $responseType);
-            $headers = ['X-Result-Count' => $elementCounter, 'X-Export-Module-Used' => $returnFormat, 'X-Response-Format' => $responseType, 'X-Skipped-Elements-Count' => $skippedElementsCounter];
+            $headers = [
+                'X-Result-Count' => $elementCounter,
+                'X-Export-Module-Used' => $returnFormat,
+                'X-Response-Format' => $responseType,
+                'X-Skipped-Elements-Count' => $skippedElementsCounter,
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+            ];
             return $this->RestResponse->viewData($final, $responseType, false, true, $filename, $headers);
         }
     }
