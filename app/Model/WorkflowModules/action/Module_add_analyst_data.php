@@ -18,7 +18,7 @@ class Module_add_analyst_data extends WorkflowBaseActionModule
     private $Note;
     private $Opinion;
     private $Relationship;
-    private $MispAttribute;
+    private $Attribute;
     private $SharingGroup;
 
     private $validTargets = [
@@ -39,13 +39,13 @@ class Module_add_analyst_data extends WorkflowBaseActionModule
         $this->Note = ClassRegistry::init('Note');
         $this->Opinion = ClassRegistry::init('Opinion');
         $this->Relationship = ClassRegistry::init('Relationship');
-        $this->MispAttribute = ClassRegistry::init('MispAttribute');
+        $this->Attribute = ClassRegistry::init('Attribute');
         $this->SharingGroup = ClassRegistry::init('SharingGroup');
 
         
         $validTypes = array_combine($this->Note::ANALYST_DATA_TYPES, $this->Note::ANALYST_DATA_TYPES);
 
-        $distributionLevels = $this->MispAttribute->shortDist;
+        $distributionLevels = $this->Attribute->shortDist;
         $distribution_param = [];
         foreach ($distributionLevels as $i => $text) {
             $distribution_param[] = ['name' => $text, 'value' => $i];
