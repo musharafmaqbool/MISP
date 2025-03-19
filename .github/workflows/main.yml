@@ -90,6 +90,11 @@ jobs:
           sudo chown -R $USER:www-data `pwd`/app/Plugin/CakeResque/tmp
           sudo chmod -R 755 `pwd`/app/Plugin/CakeResque/tmp
 
+          # Enable CakeResque plugin #FIXME: change tests to use SimpleBackgroundJobs
+          echo 'CakePlugin::loadAll(array(
+              "CakeResque" => array("bootstrap" => true)
+          ));' >> `pwd`/app/Config/bootstrap.php
+
           # Fill database with basic MISP schema
           mysql -h 127.0.0.1 --port 3306 -u root -pbar -e "SET GLOBAL sql_mode = 'STRICT_ALL_TABLES';"
           mysql -h 127.0.0.1 --port 3306 -u root -pbar -e "grant usage on *.* to misp@'%' identified by 'blah';"
