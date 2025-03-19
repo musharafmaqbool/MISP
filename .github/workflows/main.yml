@@ -115,7 +115,8 @@ jobs:
           sudo cp build/email.php app/Config/email.php
 
           # Enable CakeResque plugin #FIXME: change tests to use SimpleBackgroundJobs
-          sudo echo 'CakePlugin::loadAll(array(
+          sudo chmod 666 app/Config/bootstrap.php
+          echo 'CakePlugin::loadAll(array(
               "CakeResque" => array("bootstrap" => true)
           ));' >> app/Config/bootstrap.php
 
