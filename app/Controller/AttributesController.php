@@ -81,7 +81,6 @@ class AttributesController extends AppController
             $params = array_merge_recursive($params, $this->paginate);
         }
         $params['conditions']['AND'][] = $this->Attribute->buildConditions($user);
-
         $paramArray = [
             'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'limit', 'page', 'sort', 'direction'
         ];
@@ -89,6 +88,7 @@ class AttributesController extends AppController
             'request' => $this->request,
             'named_params' => $this->request->params['named'],
             'paramArray' => $paramArray,
+            'ordered_url_params' => func_get_args(),
             'additional_delimiters' => PHP_EOL
         );
         $exception = false;
@@ -1629,6 +1629,10 @@ class AttributesController extends AppController
 
     public function search()
     {
+        if ($this->_isRest()) {
+            // This functionality no longer does any searching, pass it simply on to the index method
+            return call_user_func_array([$this, 'index'], func_get_args());
+        }
         $orgTable = $this->Attribute->Event->Orgc->find('all', [
             'fields' => ['Orgc.id', 'Orgc.name', 'Orgc.uuid'],
         ]);
