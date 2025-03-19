@@ -117,7 +117,7 @@ jobs:
           # Enable CakeResque plugin #FIXME: change tests to use SimpleBackgroundJobs
           sudo echo 'CakePlugin::loadAll(array(
               "CakeResque" => array("bootstrap" => true)
-          ));' >> `pwd`/app/Config/bootstrap.php
+          ));' >> app/Config/bootstrap.php
 
           # GPG setup
           sudo mkdir `pwd`/.gnupg
