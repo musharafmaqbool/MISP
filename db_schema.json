@@ -5386,6 +5386,17 @@
                 "column_type": "text",
                 "column_default": null,
                 "extra": ""
+            },
+            {
+                "column_name": "highlighted",
+                "is_nullable": "YES",
+                "data_type": "tinyint",
+                "character_maximum_length": null,
+                "numeric_precision": "3",
+                "collation_name": null,
+                "column_type": "tinyint(1)",
+                "column_default": "0",
+                "extra": ""
             }
         ],
         "object_templates": [
@@ -11017,5 +11028,5 @@
             "uuid": false
         }
     },
-    "db_version": "136"
+    "db_version": "137"
 }

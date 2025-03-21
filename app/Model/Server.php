@@ -3649,7 +3649,10 @@ class Server extends AppModel
 
     public function stixDiagnostics(&$diagnostic_errors)
     {
-        $expected = array('stix' => '>1.2.0.11', 'cybox' => '>2.1.0.21', 'mixbox' => '>1.0.5', 'maec' => '>4.1.0.17', 'stix2' => '>3.0.0', 'pymisp' => '>2.4.120');
+        $expected = array(
+            'stix' => '>=1.2.0.11', 'cybox' => '>=2.1.0.21', 'mixbox' => '>=1.0.5', 'maec' => '>=4.1.0.17',
+            'stix2' => '>=3.0.1', 'pymisp' => '>=2.5.1', 'misp-stix' => '>=2025.2.14'
+        );
         // check if the STIX and Cybox libraries are working using the test script stixtest.py
         $scriptFile = APP . 'files' . DS . 'scripts' . DS . 'stixtest.py';
         try {
@@ -3675,7 +3678,8 @@ class Server extends AppModel
                 'mixbox' => array('expected' => $expected['mixbox']),
                 'maec' => array('expected' => $expected['maec']),
                 'stix2' => array('expected' => $expected['stix2']),
-                'pymisp' => array('expected' => $expected['pymisp'])
+                'pymisp' => array('expected' => $expected['pymisp']),
+                'misp-stix' => array('expected' => $expected['misp-stix'])
             );
         }
         $scriptResult['operational'] = $scriptResult['success'];
@@ -3691,7 +3695,7 @@ class Server extends AppModel
             $result[$package]['version'] = $scriptResult[$package];
             $result[$package]['expected'] = $expectedVersion;
             if ($expectedVersion[0] === '>') {
-                $result[$package]['status'] = version_compare($result[$package]['version'], trim($expectedVersion, '>')) >= 0 ? 1 : 0;
+                $result[$package]['status'] = version_compare($result[$package]['version'], trim($expectedVersion, '>=')) >= 0 ? 1 : 0;
             } else {
                 $result[$package]['status'] = $result[$package]['version'] === $expectedVersion ? 1 : 0;
             }
@@ -4506,6 +4510,7 @@ class Server extends AppModel
             'app/files/scripts/misp-opendata',
             'app/files/scripts/python-maec',
             'app/files/scripts/python-stix',
+            'app/files/scripts/misp-stix'
         );
         return in_array($submodule, $accepted_submodules_names, true);
     }
