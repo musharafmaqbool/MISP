@@ -1181,6 +1181,8 @@ function saveWorkflow(confirmSave, callback) {
         var formUrl = $tmpForm.attr('action')
         var editorData = getEditorData(true)
         $tmpForm.find('[name="data[Workflow][data]"]').val(JSON.stringify(editorData))
+        console.log(editorData);
+        
 
         $.ajax({
             data: $tmpForm.serialize(),
@@ -1555,6 +1557,19 @@ function afterNodeDrawCallback() {
     var $nodes = $drawflow.find('.drawflow-node')
     $nodes.find('.start-chosen').each(function() {
         var chosenOptions = $(this).data('chosen_options')
+        var $select = $(this)
+        if (chosenOptions.select_options_url) {
+            $.ajax({
+                success: function (tags, textStatus) {
+                    updateChosenOptions($select , tags)
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    showMessage('fail', 'Could not get options from select_options_url');
+                },
+                type: "get",
+                url: chosenOptions.select_options_url
+            })
+        }
         $(this).chosen(chosenOptions).trigger('change')
     })
     toggleDisplayOnFields()
@@ -1639,6 +1654,16 @@ function enablePickerCreateNewOptions() {
             }
         })
     })
+}
+
+function updateChosenOptions($select, options) {
+    options.forEach(option => {
+        var $newOption = $('<option>')
+            .val(option)
+            .text(option)
+        $select.append($newOption);
+    });
+    $select.trigger('chosen:updated');
 }
 
 function enableHashpathPicker() {
@@ -1799,7 +1824,7 @@ function genSelect(options, forNode = true) {
     if (options.disabled !== undefined) {
         $select.prop('disabled', options.disabled == true)
     }
-    var selectOptions = options.options
+    var selectOptions = options.options ?? []
     if (!Array.isArray(selectOptions)) {
         selectOptions = Object.keys(options.options).map((k) => { return { name: options.options[k], value: k } })
     }
