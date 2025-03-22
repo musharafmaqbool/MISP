@@ -261,7 +261,10 @@ class AnalystData extends AppModel
     {
         if (!empty($analystData[$this->alias]['orgc_uuid'])) {
             if (!isset($analystData['Orgc'])) {
-                $analystData[$this->alias]['Orgc'] = $this->Orgc->find('first', ['conditions' => ['uuid' => $analystData[$this->alias]['orgc_uuid']]])['Organisation'];
+                $orgFound = $this->Orgc->find('first', ['conditions' => ['uuid' => $analystData[$this->alias]['orgc_uuid']]]);
+                if (!empty($orgFound)) {
+                    $analystData[$this->alias]['Orgc'] = $orgFound['Organisation'];
+                }
             } else {
                 $analystData[$this->alias]['Orgc'] = $analystData['Orgc'];
             }
@@ -269,7 +272,10 @@ class AnalystData extends AppModel
         }
         if (!empty($analystData[$this->alias]['org_uuid'])) {
             if (!isset($analystData['Org'])) {
-                $analystData[$this->alias]['Org'] = $this->Org->find('first', ['conditions' => ['uuid' => $analystData[$this->alias]['org_uuid']]])['Organisation'];
+                $orgFound = $this->Org->find('first', ['conditions' => ['uuid' => $analystData[$this->alias]['org_uuid']]]);
+                if (!empty($orgFound)) {
+                    $analystData[$this->alias]['Org'] = $orgFound['Organisation'];
+                }
             } else {
                 $analystData[$this->alias]['Org'] = $analystData['Org'];
             }
@@ -285,15 +291,17 @@ class AnalystData extends AppModel
                 if (!isset($analystData['SharingGroup'])) {
                     $this->SharingGroup = ClassRegistry::init('SharingGroup');
                     $sg = $this->SharingGroup->fetchSG($analystData[$this->alias]['sharing_group_id'], $user, true);
-                    $sgData = array_intersect_key(
-                        $sg['SharingGroup'], array_flip(
-                            [
-                                'id', 'name', 'uuid', 'releasability', 'description', 'org_id',
-                                'active', 'roaming', 'local'
-                            ]
-                        )
-                    );
-                    $analystData[$this->alias]['SharingGroup'] = $sgData;
+                    if (!empty($sg)) {
+                        $sgData = array_intersect_key(
+                            $sg['SharingGroup'], array_flip(
+                                [
+                                    'id', 'name', 'uuid', 'releasability', 'description', 'org_id',
+                                    'active', 'roaming', 'local'
+                                ]
+                            )
+                        );
+                        $analystData[$this->alias]['SharingGroup'] = $sgData;
+                    }
                 } else {
                     $analystData[$this->alias]['SharingGroup'] = $analystData['SharingGroup'];
                 }

@@ -33,7 +33,7 @@ class AppController extends Controller
 
     public $helpers = array('OrgImg', 'FontAwesome', 'UserName');
 
-    private $__queryVersion = '170';
+    private $__queryVersion = '171';
     public $pyMispVersion = '2.5.7';
     public $phpmin = '8.1';
     public $phprec = '8.2';
@@ -396,6 +396,12 @@ class AppController extends Controller
                 } else {
                     $this->Flash->warning($deprecationWarnings);
                 }
+            }
+        }
+        $notificationToasts = $this->User->collectNotificationToastForUser(['User' => $user]);
+        if (!empty($notificationToasts)) {
+            foreach ($notificationToasts as $notificationToast) {
+                $this->Flash->set($notificationToast['message'], $notificationToast);
             }
         }
         if (Configure::read('MISP.enable_automatic_garbage_collection') && mt_rand(1,100) % 100 == 0) {
@@ -1115,6 +1121,11 @@ class AppController extends Controller
                 }
             }
         }
+        if (!empty($options['request']->query)) {
+            foreach ($options['request']->query as $k => $v) {
+                $data[$k] = $v;
+            }
+        }
         foreach ($data as &$v) {
             if (is_string($v)) {
                 $v = trim($v);
@@ -1445,7 +1456,13 @@ class AppController extends Controller
                 $this->RestResponse->signContents = true;
             }
             $filename = $this->RestSearch->getFilename($filters, $scope, $responseType);
-            $headers = ['X-Result-Count' => $elementCounter, 'X-Export-Module-Used' => $returnFormat, 'X-Response-Format' => $responseType, 'X-Skipped-Elements-Count' => $skippedElementsCounter];
+            $headers = [
+                'X-Result-Count' => $elementCounter,
+                'X-Export-Module-Used' => $returnFormat,
+                'X-Response-Format' => $responseType,
+                'X-Skipped-Elements-Count' => $skippedElementsCounter,
+                'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+            ];
             return $this->RestResponse->viewData($final, $responseType, false, true, $filename, $headers);
         }
     }
