@@ -96,7 +96,6 @@ jobs:
           mysql -h 127.0.0.1 --port 3306 -u root -pbar -e "grant all privileges on misp.* to misp@'%';"
           mysql -h 127.0.0.1 --port 3306 -u misp -pblah misp < INSTALL/MYSQL.sql
 
-
           # configure apache virtual hosts
           sudo mkdir -p /etc/apache2/sites-available
           sudo cp -f build/github-action-ci-apache /etc/apache2/sites-available/misp.conf
@@ -114,6 +113,12 @@ jobs:
           sudo cp app/Config/core.default.php app/Config/core.php
           sudo cp app/Config/config.default.php app/Config/config.php
           sudo cp build/email.php app/Config/email.php
+
+          # Enable CakeResque plugin #FIXME: change tests to use SimpleBackgroundJobs
+          sudo chmod 666 app/Config/bootstrap.php
+          echo 'CakePlugin::loadAll(array(
+              "CakeResque" => array("bootstrap" => true)
+          ));' >> app/Config/bootstrap.php
 
           # GPG setup
           sudo mkdir `pwd`/.gnupg
