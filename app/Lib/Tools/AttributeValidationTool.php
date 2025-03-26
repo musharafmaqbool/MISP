@@ -567,8 +567,10 @@ class AttributeValidationTool
                   }
                 return true;*/
             case 'integer':
-                if (is_int($value)) {
-                    return true;
+                if (is_numeric($value)) {
+                    if (filter_var($value, FILTER_VALIDATE_INT)) {
+                        return true;
+                    }
                 }
                 return __('The value has to be an integer value.');
             case 'iban':
