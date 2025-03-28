@@ -2,8 +2,7 @@
 This plugin allows MISP to authenticate against an LDAP server.
 
 ## How to
-1. For enabling this plugin, uncomment the line `CakePlugin::load('LdapAuth');` in the `app/Config/bootstrap.php` configuration file.
-2. Add your LDAP server configuration to `app/Config/config.php` configuration file:
+1. Add your LDAP server configuration to `app/Config/config.php` configuration file:
     ```
     'LdapAuth' => [
         'ldapServer' => 'ldap://openldap:1389',
@@ -13,7 +12,7 @@ This plugin allows MISP to authenticate against an LDAP server.
     ],
     ```
     > **NOTE:** This plugin requires a reader user to query the LDAP server.
-3. Add the LDAP authentication method in the `Security.auth` key of the `app/Config/config.php` configuration file:
+2. Add the LDAP authentication method in the `Security.auth` key of the `app/Config/config.php` configuration file:
     ```
     ...
     'Security' => [
@@ -23,7 +22,7 @@ This plugin allows MISP to authenticate against an LDAP server.
        ]
     ]
     ``` 
-4. Log in with your LDAP credentials using the MISP Login form, if the user doesn't exist on MISP it will be created on the first log in.
+3. Log in with your LDAP credentials using the MISP Login form, if the user doesn't exist on MISP it will be created on the first log in.
 
 ## Settings
 Each setting is stored in the `LdapAuth` configuration array and can be customized as per your LDAP server and application requirements.
