@@ -7769,14 +7769,16 @@ class Server extends AppModel
                     'description' => __('AWS key to use when uploading samples (WARNING: It\' highly recommended that you use EC2 IAM roles if at all possible)'),
                     'value' => '',
                     'test' => 'testForEmpty',
-                    'type' => 'string'
+                    'type' => 'string',
+                    'redacted' => true
                 ),
                 'S3_aws_secret_key' => array(
                     'level' => 2,
                     'description' => __('AWS secret key to use when uploading samples'),
                     'value' => '',
                     'test' => 'testForEmpty',
-                    'type' => 'string'
+                    'type' => 'string',
+                    'redacted' => true
                 ),
                 'Sightings_policy' => array(
                     'level' => 1,
