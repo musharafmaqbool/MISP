@@ -60,6 +60,9 @@ class AttributesController extends AppController
             if ($key === 'to_ids' && $value === '0') {
                 unset($filters[$key]);
             }
+            if ($key === 'warnings' && $value === '0') {
+                unset($filters[$key]);
+            }
             if (is_array($value)) {
                 $filters[$key] = $this->cleanDefaultFormValues($value);
             } elseif ($value === '') {
@@ -82,7 +85,7 @@ class AttributesController extends AppController
         }
         $params['conditions']['AND'][] = $this->Attribute->buildConditions($user);
         $paramArray = [
-            'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'limit', 'page', 'sort', 'direction'
+            'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'limit', 'page', 'sort', 'direction' 
         ];
         $filterData = array(
             'request' => $this->request,
@@ -108,6 +111,9 @@ class AttributesController extends AppController
         }
         $this->set('params', $params);
         $conditions = $this->Attribute->buildFilterConditions($user, $filters, false);
+        if (isset($params['warnings'])) {
+            $params_warnings = $params['warnings'];
+        }
         $params = [];
         if (!empty($filters['direction'])) {
             $params['direction'] = $filters['direction'];
@@ -123,6 +129,7 @@ class AttributesController extends AppController
             $params['conditions'] = $conditions;
         }
         $params['flatten'] = 1;
+        $params['includeWarninglistHits'] = 1;
         if ($this->_isRest()) {
             if (!empty($filters['page'])) {
                 $params['page'] = $filters['page'];
@@ -131,11 +138,21 @@ class AttributesController extends AppController
                 $params['limit'] = $filters['limit'];
             }
             $attributes = $this->Attribute->fetchAttributes($user, $params);
+            if (isset($params_warnings)) {
+                $attributes = array_filter($attributes, function($attribute) {
+                    return !isset($attribute['Attribute']['warnings']);
+                });;
+            }
         } else {
             $params['page'] = !empty($filters['page']) ? $filters['page'] : 1;
             $params['limit'] = !empty($filters['limit']) ? $filters['limit'] : 60;
             $this->paginate['conditions'] = $conditions;
             $attributes = $this->Attribute->fetchAttributes($user, $params);
+            if (isset($params_warnings)) {
+                $attributes = array_filter($attributes, function($attribute) {
+                    return !isset($attribute['Attribute']['warnings']);
+                });;
+            }
             App::uses('CustomPaginationTool', 'Tools');
             $customPagination = new CustomPaginationTool();
             $params = $customPagination->createPaginationRules($attributes, $params, $this->modelClass);
@@ -2120,6 +2137,7 @@ class AttributesController extends AppController
             $category = $this->request->data['Attribute']['category'];
             $type = $this->request->data['Attribute']['type'];
             $to_ids = $this->request->data['Attribute']['to_ids'];
+
 
             $oldAttributes = $this->Attribute->find('all', array(
                 'conditions' => array(
