@@ -157,7 +157,7 @@ if (Configure::read('OidcAuth')) {
 	CakePlugin::load('OidcAuth');
 }
 
-if (Configure::read('ShibbAuth')) {
+if (Configure::read('ShibbAuth') || Configure::read('ApacheShibbAuth')) {
 	CakePlugin::load('ShibbAuth');
 }
 
