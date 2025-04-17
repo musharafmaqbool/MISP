@@ -111,6 +111,15 @@ class Module_filter_tag extends WorkflowFilteringLogicModule
                 'operator' => $operator,
                 'value' => $value,
             ];
+
+            // Also filter attributes in the Attribute key
+            $selector = 'Event.Attribute';
+            $newRData['enabledFilters'][$filteringLabel . '_2'] = [
+                'selector' => $selector,
+                'path' => $path,
+                'operator' => $operator,
+                'value' => $value,
+            ];
         } else if ($scope == 'event_report' || $scope == 'inherited_report') {
             $selector = 'Event.EventReport';
             $path = $scope == 'inherited_report' ? '_allTags.{n}.name' : 'Tag.{n}.name';
