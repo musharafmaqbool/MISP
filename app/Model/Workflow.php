@@ -1680,6 +1680,12 @@ class Workflow extends AppModel
         $success = $module_class->exec($node, $roaming_data, $errors);
         $result['success'] = $success;
         $result['errors'] = $errors;
+        if (!empty($module_config['isFiltering'])) {
+            $rData = $roaming_data->getData();
+            if (!empty($rData['Event'])) {
+                $result['filtered_data'] = ['Event' => $rData['Event']];
+            }
+        }
         return $result;
     }
 
