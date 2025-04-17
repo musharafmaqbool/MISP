@@ -1766,8 +1766,10 @@ function updateChosenOptions($select, options, savedValues) {
         }
         $select.append($newOption);
     });
+    $select.data('invalidate_cache', false);
     $select.trigger('chosen:updated');
     $select.trigger('change');
+    $select.data('invalidate_cache', true);
 }
 
 function enableHashpathPicker() {
@@ -2236,7 +2238,9 @@ function handleSelectChange(changed) {
     var node_data = setParamValueForInput($input, node.data)
     editor.updateNodeDataFromId(node.id, node_data)
     toggleDisplayOnFields()
-    invalidateContentCache()
+    if ($input.data('invalidate_cache') === undefined || $input.data('invalidate_cache') === true) {
+        invalidateContentCache()
+    }
 }
 
 function saveFilteringForModule() {
