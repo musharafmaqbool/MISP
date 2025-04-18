@@ -1551,6 +1551,8 @@ class Event extends AppModel
                     'orgc_id' => array('function' => 'set_filter_orgc_id', 'pop' => true),
                     'uuid' => array('function' => 'set_filter_uuid', 'pop' => true),
                     'published' => array('function' => 'set_filter_published', 'pop' => true),
+                    'extended' => array('function' => 'set_filter_extended', 'pop' => true),
+                    'extending' => array('function' => 'set_filter_extending', 'pop' => true),
                     'threat_level_id' => array('function' => 'set_filter_threat_level_id', 'pop' => true),
                     'sharinggroup' => array('function' => 'set_filter_sharing_group')
                 ),
@@ -1912,6 +1914,12 @@ class Event extends AppModel
         if (isset($options['published'])) {
             $conditions['AND'][] = array('Event.published' => $options['published']);
         }
+        if (isset($options['extended'])) {
+            $conditions = $this->set_filter_extended($options, $conditions, null);
+        }
+        if (isset($options['extending'])) {
+            $conditions = $this->set_filter_extending($options, $conditions, null);
+        }
         if ($options['orgc_id']) {
             $conditions['AND'][] = array('Event.orgc_id' => $options['orgc_id']);
         }
@@ -1962,7 +1970,7 @@ class Event extends AppModel
                         ${'conditions' . $softDeletable . 's'}['AND'][] = [
                             "$softDeletable.deleted" => $options['deleted'],
                         ];
-                    }
+                    }       
                 }
             }
         } else {
@@ -2942,6 +2950,86 @@ class Event extends AppModel
         }
         return $conditions;
     }
+
+
+    public function set_filter_extended(&$params, $conditions, $options)
+    {   
+        xdebug_break();
+        if (!isset($params['extended'])) {
+            return $conditions;
+        }
+
+        $extended = filter_var($params['extended'], FILTER_VALIDATE_BOOLEAN);
+
+        // DB query to get all events with extends_uuid
+        $events = $this->find('all', array(
+            'fields' => array('Event.extends_uuid'),
+            'conditions' => array('Event.extends_uuid !=' => ''),
+            'recursive' => -1
+        ));
+
+        //If there is no event with extends_uuid(extending), there is basically no event extended
+        if (empty($events)) {
+            $conditions['AND'][] = array('Event.id' => -1);
+            return $conditions;
+        }
+
+        // Extract the UUIDs of the events that are extended and remove duplicates
+        $targetUuids = array_unique(Hash::extract($events, '{n}.Event.extends_uuid'));
+
+        // Extract the UUIDs and ids of all events
+        $allEvents = $this->find('all', array(
+            'fields' => array('Event.id', 'Event.uuid'),
+            'recursive' => -1
+        ));
+        $allEventUuids = Hash::combine($allEvents, '{n}.Event.uuid', '{n}.Event.id');
+    
+
+        if ($extended) {
+            // Fetching the events that are extended
+            $linkedEventIds = array();
+            foreach ($targetUuids as $uuid) {
+                if (isset($allEventUuids[$uuid])) {
+                    $linkedEventIds[] = $allEventUuids[$uuid];
+                }
+            }
+        } else {
+            // Fetching the events that are not extended
+            $linkedEventIds = array();
+            foreach ($allEventUuids as $uuid => $id) {
+                if (!in_array($uuid, $targetUuids, true)) {
+                    $linkedEventIds[] = $id;
+                }
+            }
+        }
+
+        if (empty($linkedEventIds)) {
+            $conditions['AND'][] = array('Event.id' => -1);
+        } else {
+            $conditions['AND'][] = array('Event.id' => $linkedEventIds);
+        }
+
+        return $conditions;
+    }
+
+
+
+    public function set_filter_extending(&$params, $conditions, $options)
+    {
+        
+        if (!isset($params['extending'])) {
+            return $conditions;
+        }
+        $extending = filter_var($params['extending'], FILTER_VALIDATE_BOOLEAN);
+
+        if ($extending) {
+            $conditions['AND'][] = array('Event.extends_uuid !=' => '');
+        } else {
+            $conditions['AND'][] = array('Event.extends_uuid' => '');
+        }
+        return $conditions;
+    }
+
 
     public function set_filter_threat_level_id(&$params, $conditions, $options)
     {
@@ -7728,7 +7816,7 @@ class Event extends AppModel
         }
         $non_restrictive_export = !empty($exportTool->non_restrictive_export);
         $filters = $this->restSearchFilterMassage($filters, $non_restrictive_export, $user);
-
+        
         $filters = $this->addFiltersFromUserSettings($user, $filters);
         if (empty($exportTool->mock_query_only)) {
             $filters['include_attribute_count'] = 1;
