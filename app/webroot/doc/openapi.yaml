@@ -6268,6 +6268,14 @@ components:
       type: boolean
       default: false
 
+    ExtendingRestSearchFlag:
+      description: "Only shows events that are extending an other one"
+      type: boolean
+    
+    ExtendedRestSearchFlag:
+      description: "Only shows events that are extended by an other one"
+      type: boolean
+
     PublishedFlag:
       type: boolean
       default: false
@@ -7432,6 +7440,10 @@ components:
                 $ref: "#/components/schemas/AnalysisLevelId"
               threatlevel:
                 $ref: "#/components/schemas/ThreatLevelId"
+              extending:
+                $ref: "#/components/schemas/ExtendingRestSearchFlag"
+              extended:
+                $ref: "#/components/schemas/ExtendedRestSearchFlag"
               email:
                 description: "Filter events by matching the event creator user email"
                 type: string
@@ -7544,6 +7556,10 @@ components:
                 $ref: "#/components/schemas/ObjectRelationRestSearchFilter"
               threat_level_id:
                 $ref: "#/components/schemas/ThreatLevelId"
+              extending:
+                $ref: "#/components/schemas/ExtendingRestSearchFlag"
+              extended:
+                $ref: "#/components/schemas/ExtendedRestSearchFlag"
               returnFormat:
                 $ref: "#/components/schemas/EventsRestSearchReturnFormat"
 
