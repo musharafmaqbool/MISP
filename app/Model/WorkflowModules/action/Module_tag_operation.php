@@ -142,6 +142,7 @@ class Module_tag_operation extends WorkflowBaseActionModule
                 $tags = $this->genTagObjectsFromTagNames($tagAttached, $options);
                 $updatedRData = $this->_addTag($tags, 'attribute', $roamingData->getData(), $attribute);
                 $roamingData->setData($updatedRData);
+                $this->_buildFastLookupForRoamingData($roamingData->getData());
             }
             $success = $success || !empty($saveSuccess);
         }
@@ -158,6 +159,7 @@ class Module_tag_operation extends WorkflowBaseActionModule
                 $tags = $this->genTagObjectsFromTagNames($tagDetached, $options);
                 $updatedRData = $this->_removeTag($tags, 'attribute', $roamingData->getData(), $attribute);
                 $roamingData->setData($updatedRData);
+                $this->_buildFastLookupForRoamingData($roamingData->getData());
             }
             $success = $success || !empty($saveSuccess);
         }
