@@ -6854,7 +6854,7 @@ class Event extends AppModel
         }
         return $message;
     }
-
+ 
     /**
      * @param array $user
      * @param array $resolved_data
@@ -7681,12 +7681,7 @@ class Event extends AppModel
             }
         }
 
-        $defaultLimit = Configure::read('MISP.default_restsearch_limit');
-        if (!empty($filters['limit']) && ($filters['limit'] < $defaultLimit) || $defaultLimit == 0) {
-            $filters['limit'] = $filters['limit'];
-        } else {
-            $filters['limit'] = $defaultLimit; 
-        }
+        
 
         if (isset($filters['tag']) and !isset($filters['tags'])) {
             $filters['tags'] = $filters['tag'];

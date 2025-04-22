@@ -1436,6 +1436,13 @@ class AppController extends Controller
                 ]);
             }
         }
+
+        $defaultLimit = (int) Configure::read('MISP.default_restsearch_limit');
+        if (!empty($filters['limit']) && ($filters['limit'] < $defaultLimit) || $defaultLimit == 0) {
+            $filters['limit'] = $filters['limit'];
+        } else {
+            $filters['limit'] = $defaultLimit; 
+        }
         /** @var TmpFileTool $final */
         $skippedElementsCounter = 0;
         $final = $model->restSearch($user, $returnFormat, $filters, false, false, $elementCounter, $renderView, $skippedElementsCounter);

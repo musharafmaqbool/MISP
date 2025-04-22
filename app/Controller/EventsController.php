@@ -710,12 +710,11 @@ class EventsController extends AppController
                 }
             }
         }
-
+        
         // check each of the passed arguments whether they're a filter (could also be a sort for example) and if yes, add it to the pagination conditions
         $nothing = false;
         $passedArgsArray = $this->__setIndexFilterConditions($passedArgs, $urlparams, $nothing);
         $this->loadModel('GalaxyCluster');
-
         // for REST, don't use the pagination. With this, we'll escape the limit of events shown on the index.
         if ($this->_isRest()) {
             if ($nothing) {
@@ -747,7 +746,7 @@ class EventsController extends AppController
 
         list($possibleColumns, $enabledColumns) = $this->__indexColumns();
         $events = $this->__attachInfoToEvents($enabledColumns, $events);
-
+        
         $this->__noKeyNotification();
         $this->set('events', $events);
         $this->set('possibleColumns', $possibleColumns);
@@ -816,32 +815,41 @@ class EventsController extends AppController
                 $rules[$paginationRule] = $passedArgs[$paginationRule];
             }
         }
-
+        
+        $defaultLimit = (int)Configure::read('MISP.default_restsearch_limit');
         if (empty($rules['limit'])) {
+            $rules['limit'] = $defaultLimit !== 0 ? $defaultLimit : 20000;
+
             $events = [];
             $i = 1;
-            $rules['limit'] = 20000;
-            while (true) {
+
+            while (count($events) < $rules['limit']) {
                 $rules['page'] = $i++;
                 $temp = $this->Event->find('all', $rules);
-                $resultCount = count($temp);
-                if ($resultCount !== 0) {
-                    array_push($events, ...$temp);
+                if (empty($temp)) {
+                    break;
                 }
-                if ($resultCount < $rules['limit']) {
+                $remaining = $rules['limit'] - count($events);
+                if (count($temp) <= $remaining) {
+                    $events = array_merge($events, $temp);
+                } else {
+                    $events = array_merge($events, array_slice($temp, 0, $remaining));
                     break;
                 }
             }
             unset($temp);
             $absoluteTotal = count($events);
         } else {
+            if ($defaultLimit !== 0 && $rules['limit'] > $defaultLimit) {
+                $rules['limit'] = $defaultLimit;
+            }
             $counting_rules = $rules;
             unset($counting_rules['limit']);
             unset($counting_rules['page']);
             $absoluteTotal = $this->Event->find('count', $counting_rules);
-
             $events = $absoluteTotal === 0 ? [] : $this->Event->find('all', $rules);
         }
+
 
         $isCsvResponse = $this->response->type() === 'text/csv';
 
