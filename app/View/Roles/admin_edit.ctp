@@ -33,6 +33,20 @@
             ?>
         </div>
         <div class="input clear"></div>
+        <?php
+            echo $this->Form->input('restrict_search_results', array(
+                'type' => 'checkbox',
+                'checked' => $this->request->data['Role']['restrict_search_results'],
+                'label' => __('Restrict search results')
+            ));
+        ?>
+        <div class="input clear"></div>
+        <div id="resultLimitCountContainer">
+            <?php
+                echo $this->Form->input('result_limit_count', array('label' => __('# of result by search')));
+            ?>
+        </div>
+        <div class="input clear"></div>
         <div class="role-permissions">
         <?php foreach ($permFlags as $k => $flag): ?>
                 <div class="permFlags<?php echo ' ' . ($flag['readonlyenabled'] ? 'readonlyenabled' : 'readonlydisabled'); ?>">
@@ -61,11 +75,15 @@
     $(function() {
         checkRolePerms();
         checkRoleEnforceRateLimit();
+        checkRoleRestrictSearchResults();
         $(".checkbox, #RolePermission").change(function() {
             checkRolePerms();
         });
         $("#RoleEnforceRateLimit").change(function() {
             checkRoleEnforceRateLimit();
+        });
+        $("#RoleRestrictSearchResults").change(function() {
+            checkRoleRestrictSearchResults();
         });
     });
 </script>

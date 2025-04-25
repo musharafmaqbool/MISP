@@ -5446,6 +5446,14 @@ function checkRoleEnforceRateLimit() {
     }
 }
 
+function checkRoleRestrictSearchResults() {
+    if ($("#RoleRestrictSearchResults").is(':checked')) {
+        $('#resultLimitCountContainer').show();
+    } else {
+        $('#resultLimitCountContainer').hide();
+    }
+}
+
 function queryDeprecatedEndpointUsage() {
     $.ajax({
         url: baseurl + '/api/viewDeprecatedFunctionUse',

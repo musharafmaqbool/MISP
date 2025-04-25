@@ -80,6 +80,16 @@ $fields[] = [
     'requirement' => $isAdmin,
 ];
 
+$fields[] = [
+    'name' => __('Max search result'),
+    'sort' => 'Role.result_limit_count',
+    'data_path' => 'Role.result_limit_count',
+    'decorator' => function($value) {
+        return (empty($value) ? __('Unlimited') : h($value));
+    },
+    'requirement' => $isAdmin,
+];
+
 if ($isSiteAdmin) {
     $actions = [
         [

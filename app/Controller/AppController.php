@@ -1437,12 +1437,22 @@ class AppController extends Controller
             }
         }
 
-        $defaultLimit = (int) Configure::read('MISP.default_restsearch_limit');
-        if (!empty($filters['limit']) && ($filters['limit'] < $defaultLimit) || $defaultLimit == 0) {
+        $user = $this->Auth->user();
+        $roleId = $user['role_id'];
+        $this->loadModel('Role');
+        $role = $this->Role->find('first', [
+            'conditions' => ['Role.id' => $roleId],
+            'recursive' => -1,
+            'fields' => ['Role.result_limit_count']
+        ]);
+        $roleLimit = isset($role['Role']['result_limit_count']) ? (int)$role['Role']['result_limit_count'] : 0;
+
+        if (!empty($filters['limit']) && ($filters['limit'] < $roleLimit || $roleLimit == 0)) {
             $filters['limit'] = $filters['limit'];
         } else {
-            $filters['limit'] = $defaultLimit; 
+            $filters['limit'] = $roleLimit;
         }
+        
         /** @var TmpFileTool $final */
         $skippedElementsCounter = 0;
         $final = $model->restSearch($user, $returnFormat, $filters, false, false, $elementCounter, $renderView, $skippedElementsCounter);

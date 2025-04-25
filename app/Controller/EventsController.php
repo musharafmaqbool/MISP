@@ -816,9 +816,18 @@ class EventsController extends AppController
             }
         }
         
-        $defaultLimit = (int)Configure::read('MISP.default_restsearch_limit');
+        $user = $this->Auth->user();
+        $roleId = $user['role_id'];
+        $this->loadModel('Role');
+        $role = $this->Role->find('first', [
+            'conditions' => ['Role.id' => $roleId],
+            'recursive' => -1,
+            'fields' => ['Role.result_limit_count']
+        ]);
+        $roleLimit = isset($role['Role']['result_limit_count']) ? (int)$role['Role']['result_limit_count'] : 0;
+
         if (empty($rules['limit'])) {
-            $rules['limit'] = $defaultLimit !== 0 ? $defaultLimit : 20000;
+            $rules['limit'] = $roleLimit !== 0 ? $roleLimit : 20000;
 
             $events = [];
             $i = 1;
@@ -840,8 +849,8 @@ class EventsController extends AppController
             unset($temp);
             $absoluteTotal = count($events);
         } else {
-            if ($defaultLimit !== 0 && $rules['limit'] > $defaultLimit) {
-                $rules['limit'] = $defaultLimit;
+            if ($roleLimit !== 0 && $rules['limit'] > $roleLimit) {
+                $rules['limit'] = $roleLimit;
             }
             $counting_rules = $rules;
             unset($counting_rules['limit']);

@@ -39,6 +39,18 @@ $fields = [
         'div' => [
             'id' => 'rateLimitCountContainer'
         ]
+    ],
+    [
+        'field' => 'restrict_search_results',
+        'label' => __('Restrict search results'),
+        'type' => 'checkbox',
+    ],
+    [
+        'field' => 'result_limit_count',
+        'label' => __('# of result by search'),
+        'div' => [
+            'id' => 'resultLimitCountContainer'
+        ]
     ]
 ];
 $counter = 0;
@@ -83,11 +95,15 @@ if (!$ajax) {
     $(function() {
         checkRolePerms();
         checkRoleEnforceRateLimit();
+        checkRoleRestrictSearchResults();
         $(".checkbox, #RolePermission").change(function() {
             checkRolePerms();
         });
         $("#RoleEnforceRateLimit").change(function() {
             checkRoleEnforceRateLimit();
+        });
+        $("#RoleRestrictSearchResults").change(function() {
+            checkRoleRestrictSearchResults();
         });
     });
 </script>
