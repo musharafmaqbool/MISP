@@ -41,8 +41,8 @@ $fields = [
         ]
     ],
     [
-        'field' => 'restrict_search_results',
-        'label' => __('Restrict search results'),
+        'field' => 'limit_search_results',
+        'label' => __('Limit search results'),
         'type' => 'checkbox',
     ],
     [
@@ -95,15 +95,15 @@ if (!$ajax) {
     $(function() {
         checkRolePerms();
         checkRoleEnforceRateLimit();
-        checkRoleRestrictSearchResults();
+        checkRoleLimitSearchResults();
         $(".checkbox, #RolePermission").change(function() {
             checkRolePerms();
         });
         $("#RoleEnforceRateLimit").change(function() {
             checkRoleEnforceRateLimit();
         });
-        $("#RoleRestrictSearchResults").change(function() {
-            checkRoleRestrictSearchResults();
+        $("#RoleLimitSearchResults").change(function() {
+            checkRoleLimitSearchResults();
         });
     });
 </script>

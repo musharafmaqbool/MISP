@@ -2291,7 +2291,7 @@ class AppModel extends Model
                 $sqlArray[] = "ALTER TABLE `events` MODIFY info text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
                 break;
             case 139:
-                $sqlArray[] = "ALTER TABLE `roles` ADD `restrict_search_results` tinyint(1) NOT NULL DEFAULT 0;";
+                $sqlArray[] = "ALTER TABLE `roles` ADD `limit_search_results` tinyint(1) NOT NULL DEFAULT 0;";
                 $sqlArray[] = "ALTER TABLE `roles` ADD `result_limit_count` int(11) NOT NULL DEFAULT 0;";
                 break;
             case 'fixNonEmptySharingGroupID':

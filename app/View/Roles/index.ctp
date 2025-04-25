@@ -81,7 +81,7 @@ $fields[] = [
 ];
 
 $fields[] = [
-    'name' => __('Max search result'),
+    'name' => __('Max result by search'),
     'sort' => 'Role.result_limit_count',
     'data_path' => 'Role.result_limit_count',
     'decorator' => function($value) {

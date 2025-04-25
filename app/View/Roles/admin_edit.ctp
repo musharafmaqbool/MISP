@@ -34,10 +34,10 @@
         </div>
         <div class="input clear"></div>
         <?php
-            echo $this->Form->input('restrict_search_results', array(
+            echo $this->Form->input('limit_search_results', array(
                 'type' => 'checkbox',
-                'checked' => $this->request->data['Role']['restrict_search_results'],
-                'label' => __('Restrict search results')
+                'checked' => $this->request->data['Role']['limit_search_results'],
+                'label' => __('Limit search results')
             ));
         ?>
         <div class="input clear"></div>
@@ -75,15 +75,15 @@
     $(function() {
         checkRolePerms();
         checkRoleEnforceRateLimit();
-        checkRoleRestrictSearchResults();
+        checkRoleLimitSearchResults();
         $(".checkbox, #RolePermission").change(function() {
             checkRolePerms();
         });
         $("#RoleEnforceRateLimit").change(function() {
             checkRoleEnforceRateLimit();
         });
-        $("#RoleRestrictSearchResults").change(function() {
-            checkRoleRestrictSearchResults();
+        $("#RoleLimitSearchResults").change(function() {
+            checkRoleLimitSearchResults();
         });
     });
 </script>

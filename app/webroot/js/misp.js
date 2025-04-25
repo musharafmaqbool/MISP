@@ -5446,8 +5446,8 @@ function checkRoleEnforceRateLimit() {
     }
 }
 
-function checkRoleRestrictSearchResults() {
-    if ($("#RoleRestrictSearchResults").is(':checked')) {
+function checkRoleLimitSearchResults() {
+    if ($("#RoleLimitSearchResults").is(':checked')) {
         $('#resultLimitCountContainer').show();
     } else {
         $('#resultLimitCountContainer').hide();
