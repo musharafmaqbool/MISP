@@ -42,8 +42,9 @@ $fields = [
     ],
     [
         'field' => 'limit_search_results',
-        'label' => __('Limit search results'),
+        'label' => __('Limit search results') . ' <i class="fa fa-info restclient-infofield" data-toggle="tooltip" data-placement="right" title="If unset, will be the default setting for the server. Set 0 to allow unlimited." style="margin-left: 5px;"></i>',
         'type' => 'checkbox',
+        'escape' => false
     ],
     [
         'field' => 'result_limit_count',
@@ -53,6 +54,7 @@ $fields = [
         ]
     ]
 ];
+
 $counter = 0;
 foreach ($permFlags as $k => $flag) {
     $counter += 1;
@@ -105,5 +107,9 @@ if (!$ajax) {
         $("#RoleLimitSearchResults").change(function() {
             checkRoleLimitSearchResults();
         });
+    });
+
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip();
     });
 </script>

@@ -6455,7 +6455,7 @@ class Server extends AppModel
                 ),
                 'default_restsearch_limit' => array(
                     'level' => 1,
-                    'description' => 'Default number of matching result for restSearch API if none is provided by an user. Leave empty(0) to allow unlimited.',
+                    'description' => 'Default number of matching result for restSearch API if none is provided when adding a new role. Leave empty(0) to set as unlimited.',
                     'value' => 0,
                     'errorMessage' => '',
                     'null' => true
