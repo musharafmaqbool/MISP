@@ -2954,7 +2954,7 @@ class Event extends AppModel
 
     public function set_filter_extended(&$params, $conditions, $options)
     {   
-        xdebug_break();
+
         if (!isset($params['extended'])) {
             return $conditions;
         }
@@ -2975,28 +2975,31 @@ class Event extends AppModel
         }
 
         // Extract the UUIDs of the events that are extended and remove duplicates
-        $targetUuids = array_unique(Hash::extract($events, '{n}.Event.extends_uuid'));
+        $targetUuids = array_unique($this->find('column', array(
+            'fields' => array('Event.extends_uuid'),
+            'conditions' => array('Event.extends_uuid !=' => ''),
+            'recursive' => -1
+        )));
+
 
         // Extract the UUIDs and ids of all events
-        $allEvents = $this->find('all', array(
-            'fields' => array('Event.id', 'Event.uuid'),
+        $allEvents = $this->find('list', array(
+            'fields' => array('Event.uuid', 'Event.id'),
             'recursive' => -1
-        ));
-        $allEventUuids = Hash::combine($allEvents, '{n}.Event.uuid', '{n}.Event.id');
-    
+        ));    
 
         if ($extended) {
             // Fetching the events that are extended
             $linkedEventIds = array();
             foreach ($targetUuids as $uuid) {
-                if (isset($allEventUuids[$uuid])) {
-                    $linkedEventIds[] = $allEventUuids[$uuid];
+                if (isset($allEvents[$uuid])) {
+                    $linkedEventIds[] = $allEvents[$uuid];
                 }
             }
         } else {
             // Fetching the events that are not extended
             $linkedEventIds = array();
-            foreach ($allEventUuids as $uuid => $id) {
+            foreach ($allEvents as $uuid => $id) {
                 if (!in_array($uuid, $targetUuids, true)) {
                     $linkedEventIds[] = $id;
                 }
