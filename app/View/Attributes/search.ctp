@@ -48,7 +48,7 @@
                 'label' => __('Only find IOCs flagged as to IDS'),
                 'div' => ['style' => 'margin-top:1em'],
             ));
-            echo $this->Form->input('warnings', array(
+            echo $this->Form->input('enforceWarninglist', array(
                 'type' => 'checkbox',
                 'label' => __('Exclude IOCs spotted in a warning list'),
                 'div' => ['style' => 'margin-top:1em'],
