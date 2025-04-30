@@ -1399,11 +1399,17 @@ class AppController extends Controller
         );
         $exception = false;
         $filters = $this->_harvestParameters($filterData, $exception, $this->_legacyParams);
+        $acceptHeader = $this->request->header('Accept');
         if (empty($filters) && $this->request->is('get')) {
             throw new BadRequestException(__('Restsearch queries using GET and no parameters are not allowed. If you have passed parameters via a JSON body, make sure you use POST requests.'));
         }
         if (empty($filters['returnFormat'])) {
-            $filters['returnFormat'] = 'json';
+            if (preg_match('#application/([a-zA-Z0-9\-\+]+)#', $acceptHeader, $matches)) {
+                $format = strtolower(trim($matches[1]));
+                $filters['returnFormat'] = $format;
+            } else {
+                $filters['returnFormat'] = 'json';
+            }
         }
         unset($filterData);
         if ($filters === false) {
