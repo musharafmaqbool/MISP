@@ -41,7 +41,7 @@ class AttributeValidationTool
         'wid-sec-w-\d{4}-\d{4}',
         'ncsc-\d{4}-\d{4}',
         'ssa-\d{6}',
-        'rhsa-\d{4}:\d{4,}',
+        'rh(ba|ea|sa)-\d{4}:\d{4,}',
         'ics(ma|a)-\d{2}-\d{3}-\d{2}',
         'va-\d{2}-\d{3}-\d{2}',
         'cisco-sa(-[a-zA-Z0-9_]+)+',
