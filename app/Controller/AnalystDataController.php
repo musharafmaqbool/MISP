@@ -225,6 +225,7 @@ class AnalystDataController extends AppController
                 return $analystData;
             }
         ]);
+
         if ($this->IndexFilter->isRest()) {
             return $this->restResponsePayload;
         }
