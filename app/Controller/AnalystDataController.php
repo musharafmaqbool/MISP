@@ -244,7 +244,7 @@ class AnalystDataController extends AppController
         $conditions = $this->AnalystData->buildConditions($this->Auth->user());
         $params = [
             'filters' => ['uuid', 'target_object'],
-            'quickFilters' => ['name'],
+            'quickFilters' => $this->AnalystData::SEARCHABLE_FIELDS,
             'conditions' => $conditions,
             'afterFind' => function(array $data) {
                 foreach ($data as $i => $analystData) {
