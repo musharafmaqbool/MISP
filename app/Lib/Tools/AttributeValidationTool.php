@@ -154,7 +154,7 @@ class AttributeValidationTool
             case 'vulnerability':
                 $value = str_replace('–', '-', $value);
                 $source = explode('-', $value)[0];
-                if in_array($source, ['cve', 'gcve']) {
+                if (in_array($source, ['cve', 'gcve'])) {
                     return strtoupper($value);
                 }
                 return $value;
