@@ -5648,7 +5648,7 @@ class Server extends AppModel
                 ),
                 'download_attachments_on_load' => array(
                     'level' => 2,
-                    'description' => __('Always download attachments when loaded by a user in a browser'),
+                    'description' => __('Always download attachments when loaded by a user in a browser. It is highly recommended to leave this setting on true, as otherwise opening an attachment can lead to the execution of malicious code via XSS.'),
                     'value' => true,
                     'test' => 'testBool',
                     'type' => 'boolean',
