@@ -2953,13 +2953,18 @@ class Event extends AppModel
 
 
     public function set_filter_extended(&$params, $conditions, $options)
-    {   
-
+    {
         if (!isset($params['extended'])) {
             return $conditions;
         }
 
-        $extended = filter_var($params['extended'], FILTER_VALIDATE_BOOLEAN);
+        //If extended is an array, it means that the user is filtering for both extended and not extended events
+        if (is_array($params['extended']) && count($params['extended']) === 2) {
+            return $conditions;
+        }
+        else{
+            $extended = filter_var($params['extended'], FILTER_VALIDATE_BOOLEAN);
+        }
 
         // DB query to get all events with extends_uuid
         $events = $this->find('all', array(
@@ -2986,7 +2991,7 @@ class Event extends AppModel
         $allEvents = $this->find('list', array(
             'fields' => array('Event.uuid', 'Event.id'),
             'recursive' => -1
-        ));    
+        ));
 
         if ($extended) {
             // Fetching the events that are extended
@@ -3019,11 +3024,17 @@ class Event extends AppModel
 
     public function set_filter_extending(&$params, $conditions, $options)
     {
-        
         if (!isset($params['extending'])) {
             return $conditions;
         }
-        $extending = filter_var($params['extending'], FILTER_VALIDATE_BOOLEAN);
+
+        //If extended is an array, it means that the user is filtering for both extended and not extended events
+        if (is_array($params['extending']) && count($params['extending']) === 2) {
+            return $conditions;
+        }
+        else{
+            $extending = filter_var($params['extending'], FILTER_VALIDATE_BOOLEAN);
+        }
 
         if ($extending) {
             $conditions['AND'][] = array('Event.extends_uuid !=' => '');

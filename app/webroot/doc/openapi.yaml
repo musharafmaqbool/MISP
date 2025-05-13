@@ -6269,11 +6269,11 @@ components:
       default: false
 
     ExtendingRestSearchFlag:
-      description: "Whether to include events that are extending another one. If set to 1, only events extending another will be returned. If set to 0, only events that are not extending another will be returned. Omit to disregard extension state."
+      description: "Whether to include events that are extending another one. If set to 1, only events extending another will be returned. If set to 0, only events that are not extending another will be returned. Omit or [0,1] to disregard extension state."
       type: boolean
     
     ExtendedRestSearchFlag:
-      description: "Whether to include events that are extended by another one. If set to 1, only events extended by another will be returned. If set to 0, only events that are not extended by another will be returned. Omit to disregard extension state."
+      description: "Whether to include events that are extended by another one. If set to 1, only events extended by another will be returned. If set to 0, only events that are not extended by another will be returned. Omit or [0,1] to disregard extension state."
       type: boolean
 
     PublishedFlag:
