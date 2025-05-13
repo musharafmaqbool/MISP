@@ -33,7 +33,7 @@ class AppController extends Controller
 
     public $helpers = array('OrgImg', 'FontAwesome', 'UserName');
 
-    private $__queryVersion = '174';
+    private $__queryVersion = '175';
     public $pyMispVersion = '2.5.10';
     public $phpmin = '8.1';
     public $phprec = '8.2';
@@ -1446,11 +1446,21 @@ class AppController extends Controller
         /** @var TmpFileTool $final */
         $skippedElementsCounter = 0;
         $final = $model->restSearch($user, $returnFormat, $filters, false, false, $elementCounter, $renderView, $skippedElementsCounter);
+        $responseTypeMapping = [
+            'json' => 'application/json',
+            'html' => 'text/html',
+            'text' => 'text/plain',
+            'xml' => 'application/xml'
+        ];
         if ($renderView) {
             $this->layout = false;
             $final = JsonTool::decode($final->intoString());
             $this->set($final);
             $this->render('/Events/module_views/' . $renderView);
+            if (isset($responseTypeMapping[$responseType])) {
+                $this->response->type($responseTypeMapping[$responseType]);
+            }
+            return $this->response;
         } else {
             if (!empty($filters['sign'])) {
                 $this->RestResponse->signContents = true;
