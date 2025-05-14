@@ -710,7 +710,7 @@ class EventsController extends AppController
                 }
             }
         }
-        
+
         // check each of the passed arguments whether they're a filter (could also be a sort for example) and if yes, add it to the pagination conditions
         $nothing = false;
         $passedArgsArray = $this->__setIndexFilterConditions($passedArgs, $urlparams, $nothing);
@@ -746,7 +746,7 @@ class EventsController extends AppController
 
         list($possibleColumns, $enabledColumns) = $this->__indexColumns();
         $events = $this->__attachInfoToEvents($enabledColumns, $events);
-        
+
         $this->__noKeyNotification();
         $this->set('events', $events);
         $this->set('possibleColumns', $possibleColumns);
@@ -815,50 +815,6 @@ class EventsController extends AppController
                 $rules[$paginationRule] = $passedArgs[$paginationRule];
             }
         }
-        
-        $user = $this->Auth->user();
-        $roleId = $user['role_id'];
-        $this->loadModel('Role');
-        $role = $this->Role->find('first', [
-            'conditions' => ['Role.id' => $roleId],
-            'recursive' => -1,
-            'fields' => ['Role.result_limit_count']
-        ]);
-        $roleLimit = isset($role['Role']['result_limit_count']) ? (int)$role['Role']['result_limit_count'] : 0;
-
-        if (empty($rules['limit'])) {
-            $rules['limit'] = $roleLimit !== 0 ? $roleLimit : 20000;
-
-            $events = [];
-            $i = 1;
-
-            while (count($events) < $rules['limit']) {
-                $rules['page'] = $i++;
-                $temp = $this->Event->find('all', $rules);
-                if (empty($temp)) {
-                    break;
-                }
-                $remaining = $rules['limit'] - count($events);
-                if (count($temp) <= $remaining) {
-                    $events = array_merge($events, $temp);
-                } else {
-                    $events = array_merge($events, array_slice($temp, 0, $remaining));
-                    break;
-                }
-            }
-            unset($temp);
-            $absoluteTotal = count($events);
-        } else {
-            if ($roleLimit !== 0 && $rules['limit'] > $roleLimit) {
-                $rules['limit'] = $roleLimit;
-            }
-            $counting_rules = $rules;
-            unset($counting_rules['limit']);
-            unset($counting_rules['page']);
-            $absoluteTotal = $this->Event->find('count', $counting_rules);
-            $events = $absoluteTotal === 0 ? [] : $this->Event->find('all', $rules);
-        }
-
 
         $isCsvResponse = $this->response->type() === 'text/csv';
 
