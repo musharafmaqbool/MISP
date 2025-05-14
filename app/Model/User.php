@@ -2358,4 +2358,17 @@ class User extends AppModel
         $user = array_merge($user, $temp);
         return ['ip' => $ip, 'User' => $user];
     }
+
+    public function getUserRestLimit($user, $Controller)
+    {
+        $roleId = $user['role_id'];
+        $Controller->loadModel('Role');
+        $role = $this->Role->find('first', [
+            'conditions' => ['Role.id' => $roleId],
+            'recursive' => -1,
+            'fields' => ['Role.result_limit_count']
+        ]);
+        $roleLimit = isset($role['Role']['result_limit_count']) ? (int)$role['Role']['result_limit_count'] : 0;
+        return $roleLimit;
+    }
 }

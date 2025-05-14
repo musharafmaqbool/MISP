@@ -1437,16 +1437,7 @@ class AppController extends Controller
             }
         }
 
-        $user = $this->Auth->user();
-        $roleId = $user['role_id'];
-        $this->loadModel('Role');
-        $role = $this->Role->find('first', [
-            'conditions' => ['Role.id' => $roleId],
-            'recursive' => -1,
-            'fields' => ['Role.result_limit_count']
-        ]);
-        $roleLimit = isset($role['Role']['result_limit_count']) ? (int)$role['Role']['result_limit_count'] : 0;
-
+        $roleLimit = $this->User->getUserRestLimit($this->Auth->user(), $this);
         if (!empty($filters['limit']) && ($filters['limit'] < $roleLimit || $roleLimit == 0)) {
             $filters['limit'] = $filters['limit'];
         } else {
