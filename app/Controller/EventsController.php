@@ -816,6 +816,32 @@ class EventsController extends AppController
             }
         }
 
+        if (empty($rules['limit'])) {
+            $events = [];
+            $i = 1;
+            $rules['limit'] = 20000;
+            while (true) {
+                $rules['page'] = $i++;
+                $temp = $this->Event->find('all', $rules);
+                $resultCount = count($temp);
+                if ($resultCount !== 0) {
+                    array_push($events, ...$temp);
+                }
+                if ($resultCount < $rules['limit']) {
+                    break;
+                }
+            }
+            unset($temp);
+            $absoluteTotal = count($events);
+        } else {
+            $counting_rules = $rules;
+            unset($counting_rules['limit']);
+            unset($counting_rules['page']);
+            $absoluteTotal = $this->Event->find('count', $counting_rules);
+
+            $events = $absoluteTotal === 0 ? [] : $this->Event->find('all', $rules);
+        }
+
         $isCsvResponse = $this->response->type() === 'text/csv';
 
         $protectedEventsByInstanceKey = $this->Event->CryptographicKey->protectedEventsByInstanceKey($events);
