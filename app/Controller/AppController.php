@@ -1443,7 +1443,7 @@ class AppController extends Controller
         } else {
             $filters['limit'] = $roleLimit;
         }
-        
+
         /** @var TmpFileTool $final */
         $skippedElementsCounter = 0;
         $final = $model->restSearch($user, $returnFormat, $filters, false, false, $elementCounter, $renderView, $skippedElementsCounter);
