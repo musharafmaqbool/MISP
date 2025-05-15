@@ -112,7 +112,9 @@ class AttributesController extends AppController
         $this->set('params', $params);
         $conditions = $this->Attribute->buildFilterConditions($user, $filters, false);
 
-        $params = isset($params['enforceWarninglist']) ? ['enforceWarninglist' => 1] : [];
+        if (isset($params['enforceWarninglist'])) {
+            $params['enforceWarninglist'] = 1;
+        }
 
         if (!empty($filters['direction'])) {
             $params['direction'] = $filters['direction'];
