@@ -1405,41 +1405,20 @@ class AppController extends Controller
 
         if (empty($filters['returnFormat'])) {
             $acceptHeader = $this->request->header('Accept');
-            $acceptedTypesRaw = explode(',', $acceptHeader);
 
-            //Array to hold the mime types and their quality values
-            $mimeQuality = [];
-
-            foreach ($acceptedTypesRaw as $entry) {
-                $parts = explode(';', trim($entry));
-                $mime = trim($parts[0]);
-                $q = 1.0; 
-
-                foreach ($parts as $part) {
-                    if (strpos($part, 'q=') !== false) {
-                        $q = (float) str_replace('q=', '', trim($part));
-                        break;
-                    }
-                }
-
-                if (strpos($mime, '/') !== false) {
-                    list(, $subtype) = explode('/', $mime, 2);
-                    $format = strtolower(trim($subtype));
-                    // Verify if the format is valid for the model of the request
-                    foreach ($this->$modelName->validFormats as $key => $value) {
-                        if ($key === $format) {
-                            $mimeQuality[$format] = $q;
-                            break;
-                        }
-                    }
-                }
+            if (preg_match('#application/([a-zA-Z0-9\-\+]+)#', $acceptHeader, $matches)) {
+                $format = strtolower(trim($matches[1]));
+            } elseif (preg_match('#text/csv#', $acceptHeader, $matches)) {
+                $format = 'csv';
+            } else {
+                $format = 'json';
             }
-            // Descending sort the array by value
-            arsort($mimeQuality);
-            // Take the first key of the array
-            $returnFormat = key($mimeQuality);
-            $filters['returnFormat'] = $returnFormat ?: 'json';
+        
+            if (isset($this->$modelName->validFormats[$format])) {
+                $filters['returnFormat'] = $format;
+            }
         }
+        
         unset($filterData);
         if ($filters === false) {
             return $exception;
