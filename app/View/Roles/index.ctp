@@ -73,9 +73,15 @@ $fields[] = [
 $fields[] = [
     'name' => __('Searches / 15 mins'),
     'sort' => 'Role.rate_limit_count',
-    'data_path' => 'Role.rate_limit_count',
-    'decorator' => function($value) {
-        return (empty($value) ? __('Unlimited') : h($value));
+    'element' => 'custom',
+    'function' => function (array $row){
+        $value = $row['Role']['rate_limit_count'];
+        if (!$row['Role']['enforce_rate_limit'] || empty($value)) {
+            return __('Unlimited');
+        }
+       else {
+            return h($value);
+        }
     },
     'requirement' => $isAdmin,
 ];
