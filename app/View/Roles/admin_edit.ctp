@@ -34,16 +34,24 @@
         </div>
         <div class="input clear"></div>
         <?php
-            echo $this->Form->input('limit_search_results', array(
-                'type' => 'checkbox',
-                'checked' => $this->request->data['Role']['limit_search_results'],
-                'label' => __('Limit search results')
-            ));
+            if (!is_null($this->request->data['Role']['restsearch_limit_result'])) {
+                echo $this->Form->input('is_restsearch_limited', array(
+                    'label' => __('Limit restSearch Results') . ' <i class="fa fa-info restclient-infofield" data-toggle="tooltip" data-placement="right" title="If unset, will be the default setting for the server. Set 0 to allow unlimited." style="margin-left: 5px;"></i>',
+                    'type' => 'checkbox',
+                    'checked' => true,
+                ));
+            } else {
+                echo $this->Form->input('is_restsearch_limited', array(
+                    'label' => __('Limit restSearch Results') . ' <i class="fa fa-info restclient-infofield" data-toggle="tooltip" data-placement="right" title="If unset, will be the default setting for the server. Set 0 to allow unlimited." style="margin-left: 5px;"></i>',
+                    'type' => 'checkbox',
+                    'checked' => false,
+                ));
+            }
         ?>
         <div class="input clear"></div>
-        <div id="resultLimitCountContainer">
+        <div id="restsearchLimitValueContainer">
             <?php
-                echo $this->Form->input('result_limit_count', array('label' => __('# of result by search')));
+                echo $this->Form->input('restsearch_limit_result', array('label' => __('# of result by search')));
             ?>
         </div>
         <div class="input clear"></div>
@@ -75,15 +83,30 @@
     $(function() {
         checkRolePerms();
         checkRoleEnforceRateLimit();
-        checkRoleLimitSearchResults();
+
         $(".checkbox, #RolePermission").change(function() {
             checkRolePerms();
         });
+
         $("#RoleEnforceRateLimit").change(function() {
             checkRoleEnforceRateLimit();
         });
-        $("#RoleLimitSearchResults").change(function() {
-            checkRoleLimitSearchResults();
+
+        $('#RoleRestsearchLimitResult').change(function () {
+            toggleRestSearchLimitField();
+        });
+
+        $('#RoleIsRestsearchLimited').change(function () {
+            toggleIsRestsearchLimitedField();
+        });
+
+        toggleIsRestsearchLimitedField();
+
+        $('[data-toggle="tooltip"]').tooltip();
+        $('form').submit(function() {
+            if (!$('#RoleIsRestsearchLimited').is(':checked')) {
+                $('#RoleRestsearchLimitResult').val('');
+            }
         });
     });
 </script>

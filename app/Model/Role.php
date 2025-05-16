@@ -127,9 +127,6 @@ class Role extends AppModel
         if (empty($this->data['Role']['rate_limit_count'])) {
             $this->data['Role']['rate_limit_count'] = 0;
         }
-        if (!isset($this->data['Role']['result_limit_count']) || $this->data['Role']['result_limit_count'] === '') {
-            $this->data['Role']['result_limit_count'] = (int) Configure::read('MISP.default_restsearch_limit');
-        }
         return true;
     }
 

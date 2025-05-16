@@ -5476,13 +5476,14 @@ function checkRoleEnforceRateLimit() {
     }
 }
 
-function checkRoleLimitSearchResults() {
-    if ($("#RoleLimitSearchResults").is(':checked')) {
-        $('#resultLimitCountContainer').show();
+function toggleIsRestsearchLimitedField() {
+    if ($('#RoleIsRestsearchLimited').is(':checked')) {
+        $('#restsearchLimitValueContainer').show();
     } else {
-        $('#resultLimitCountContainer').hide();
+        $('#restsearchLimitValueContainer').hide();
     }
 }
+
 
 function queryDeprecatedEndpointUsage() {
     $.ajax({

@@ -41,16 +41,18 @@ $fields = [
         ]
     ],
     [
-        'field' => 'limit_search_results',
-        'label' => __('Limit search results') . ' <i class="fa fa-info restclient-infofield" data-toggle="tooltip" data-placement="right" title="If unset, will be the default setting for the server. Set 0 to allow unlimited." style="margin-left: 5px;"></i>',
+        'field' => 'is_restsearch_limited',
+        'label' => __('Limit restSearch Results') . ' <i class="fa fa-info restclient-infofield" data-toggle="tooltip" data-placement="right" title="If unset, will be the default setting for the server. Set 0 to allow unlimited." style="margin-left: 5px;"></i>',
         'type' => 'checkbox',
-        'escape' => false
+        'div' => [
+            'id' => 'restsearchLimitToggleContainer'
+        ]
     ],
     [
-        'field' => 'result_limit_count',
-        'label' => __('# of result by search'),
+        'field' => 'restsearch_limit_result',
+        'label' => __('# of results per search'),
         'div' => [
-            'id' => 'resultLimitCountContainer'
+            'id' => 'restsearchLimitValueContainer'
         ]
     ]
 ];
@@ -97,19 +99,21 @@ if (!$ajax) {
     $(function() {
         checkRolePerms();
         checkRoleEnforceRateLimit();
-        checkRoleLimitSearchResults();
+
         $(".checkbox, #RolePermission").change(function() {
             checkRolePerms();
         });
+
         $("#RoleEnforceRateLimit").change(function() {
             checkRoleEnforceRateLimit();
         });
-        $("#RoleLimitSearchResults").change(function() {
-            checkRoleLimitSearchResults();
-        });
-    });
 
-    $(function () {
+        $('#RoleIsRestsearchLimited').change(function () {
+            toggleIsRestsearchLimitedField();
+        });
+
+        toggleIsRestsearchLimitedField(); // initial state
+
         $('[data-toggle="tooltip"]').tooltip();
     });
 </script>

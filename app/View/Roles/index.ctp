@@ -81,10 +81,18 @@ $fields[] = [
 ];
 
 $fields[] = [
-    'name' => __('Max result by search'),
-    'sort' => 'Role.result_limit_count',
-    'data_path' => 'Role.result_limit_count',
-    'decorator' => function($value) {
+    'name' => __('Max result by restSearch'),
+    'sort' => 'Role.restsearch_limit_result',
+    'element' => 'custom',
+    'function' => function (array $row){
+        $default = (int) Configure::read('MISP.default_restsearch_limit');
+        $value = $row['Role']['restsearch_limit_result'];
+        if (is_null($value) && !$row['Role']['perm_site_admin']) {
+            return __('Undefined - Fallback to server default (%s)', h($default));
+        }
+        else if (is_null($value) && $row['Role']['perm_site_admin']) {
+            return __('Undefined - Fallback to Unlimited as Site Admin', h($default));
+        }
         return (empty($value) ? __('Unlimited') : h($value));
     },
     'requirement' => $isAdmin,

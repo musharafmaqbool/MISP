@@ -2366,9 +2366,17 @@ class User extends AppModel
         $role = $this->Role->find('first', [
             'conditions' => ['Role.id' => $roleId],
             'recursive' => -1,
-            'fields' => ['Role.result_limit_count']
+            'fields' => ['Role.restsearch_limit_result', 'Role.perm_site_admin']
         ]);
-        $roleLimit = isset($role['Role']['result_limit_count']) ? (int)$role['Role']['result_limit_count'] : 0;
+        if (isset($role['Role']['restsearch_limit_result'])) {
+            $roleLimit = (int)$role['Role']['restsearch_limit_result'];
+        } else {
+            if($role['Role']['perm_site_admin']) {
+                $roleLimit = 0;
+            } else {
+                $roleLimit = (int) Configure::read('MISP.default_restsearch_limit');
+            }
+        }
         return $roleLimit;
     }
 }
