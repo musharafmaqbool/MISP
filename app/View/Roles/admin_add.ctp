@@ -99,21 +99,16 @@ if (!$ajax) {
     $(function() {
         checkRolePerms();
         checkRoleEnforceRateLimit();
-
         $(".checkbox, #RolePermission").change(function() {
             checkRolePerms();
         });
-
         $("#RoleEnforceRateLimit").change(function() {
             checkRoleEnforceRateLimit();
         });
-
         $('#RoleIsRestsearchLimited').change(function () {
             toggleIsRestsearchLimitedField();
         });
-
         toggleIsRestsearchLimitedField(); // initial state
-
         $('[data-toggle="tooltip"]').tooltip();
     });
 </script>

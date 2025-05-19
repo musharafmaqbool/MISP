@@ -716,6 +716,7 @@ class EventsController extends AppController
         $nothing = false;
         $passedArgsArray = $this->__setIndexFilterConditions($passedArgs, $urlparams, $nothing);
         $this->loadModel('GalaxyCluster');
+
         // for REST, don't use the pagination. With this, we'll escape the limit of events shown on the index.
         if ($this->_isRest()) {
             if ($nothing) {

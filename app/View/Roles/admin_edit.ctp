@@ -83,25 +83,19 @@
     $(function() {
         checkRolePerms();
         checkRoleEnforceRateLimit();
-
         $(".checkbox, #RolePermission").change(function() {
             checkRolePerms();
         });
-
         $("#RoleEnforceRateLimit").change(function() {
             checkRoleEnforceRateLimit();
         });
-
         $('#RoleRestsearchLimitResult').change(function () {
             toggleRestSearchLimitField();
         });
-
         $('#RoleIsRestsearchLimited').change(function () {
             toggleIsRestsearchLimitedField();
         });
-
         toggleIsRestsearchLimitedField();
-
         $('[data-toggle="tooltip"]').tooltip();
         $('form').submit(function() {
             if (!$('#RoleIsRestsearchLimited').is(':checked')) {

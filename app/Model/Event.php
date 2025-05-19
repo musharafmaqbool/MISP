@@ -6871,7 +6871,7 @@ class Event extends AppModel
         }
         return $message;
     }
- 
+
     /**
      * @param array $user
      * @param array $resolved_data
@@ -7697,8 +7697,6 @@ class Event extends AppModel
                 $filters['wildcard'] = $filters['searchall'];
             }
         }
-
-        
 
         if (isset($filters['tag']) and !isset($filters['tags'])) {
             $filters['tags'] = $filters['tag'];
