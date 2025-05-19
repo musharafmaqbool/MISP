@@ -4379,7 +4379,7 @@ class EventsController extends AppController
             }
         }
         return $this->RestResponse->viewData(array_keys($incomingEvents), $this->response->type());
-} 
+    }
 
     public function checkuuid($uuid)
     {

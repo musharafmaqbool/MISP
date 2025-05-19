@@ -1976,7 +1976,7 @@ class Event extends AppModel
                         ${'conditions' . $softDeletable . 's'}['AND'][] = [
                             "$softDeletable.deleted" => $options['deleted'],
                         ];
-                    }       
+                    }
                 }
             }
         } else {
