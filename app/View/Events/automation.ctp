@@ -372,8 +372,8 @@
     <b>searcheventid</b>: <?php echo __('Filters on specific event IDs - negatable');?><br />
     <b>searchthreatlevel</b>: <?php echo __('Filters on a given event threat level [1,2,3,4] - negatable');?><br />
     <b>searchdistribution</b>: <?php echo __('Filters on the distribution level [0,1,2,3] - negatable');?><br />
-    <b>searchextending</b>: <?php echo __("Filters on extending events or ones that don't [0,1] - negatable");?><br />
-    <b>searchextended</b>: <?php echo __('Filters on events that are extended or not [0,1] - negatable');?><br />
+    <b>searchextending</b>: <?php echo __("Filters on extending events or ones that don't [0,1] ");?><br />
+    <b>searchextended</b>: <?php echo __('Filters on events that are extended or not [0,1] ');?><br />
     <b>searchanalysis</b>: <?php echo __('Filters on the given analysis phase of the event [0,1,2] - negatable');?><br />
     <b>searchattribute</b>: <?php echo __('Filters on a contained attribute value - negatable');?><br />
     <b>searchvalue</b>: <?php echo __('Filter exact matches on the attribute value');?><br />

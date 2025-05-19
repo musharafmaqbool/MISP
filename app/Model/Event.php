@@ -2965,51 +2965,40 @@ class Event extends AppModel
         }
 
         //If extended is an array, it means that the user is filtering for both extended and not extended events
-        if (is_array($params['extended']) && count($params['extended']) === 2) {
+        if (is_array($params['extended']) && in_array(1, $params['extended']) && in_array(0, $params['extended'])) {
             return $conditions;
-        }
-        else{
+        } else {
             $extended = filter_var($params['extended'], FILTER_VALIDATE_BOOLEAN);
         }
 
-        // DB query to get all events with extends_uuid
-        $events = $this->find('all', array(
-            'fields' => array('Event.extends_uuid'),
-            'conditions' => array('Event.extends_uuid !=' => ''),
-            'recursive' => -1
-        ));
-
-        //If there is no event with extends_uuid(extending), there is basically no event extended
-        if (empty($events)) {
-            $conditions['AND'][] = array('Event.id' => -1);
-            return $conditions;
-        }
-
-        // Extract the UUIDs of the events that are extended and remove duplicates
+        //Step 1 - Extract the UUIDs of the events that are extended and remove duplicates
         $targetUuids = array_unique($this->find('column', array(
             'fields' => array('Event.extends_uuid'),
             'conditions' => array('Event.extends_uuid !=' => ''),
             'recursive' => -1
         )));
 
+        //If there is no event with extends_uuid(extending), there is basically no event extended
+        if (empty($targetUuids)) {
+            $conditions['AND'][] = array('Event.id' => -1);
+            return $conditions;
+        }
 
-        // Extract the UUIDs and ids of all events
+        //Step 2 - Extract the UUIDs and ids of all events
         $allEvents = $this->find('list', array(
             'fields' => array('Event.uuid', 'Event.id'),
             'recursive' => -1
         ));
 
+        //Step 3 - Fetch the events that are extended or not extended
+        $linkedEventIds = array();
         if ($extended) {
-            // Fetching the events that are extended
-            $linkedEventIds = array();
             foreach ($targetUuids as $uuid) {
                 if (isset($allEvents[$uuid])) {
                     $linkedEventIds[] = $allEvents[$uuid];
                 }
             }
         } else {
-            // Fetching the events that are not extended
-            $linkedEventIds = array();
             foreach ($allEvents as $uuid => $id) {
                 if (!in_array($uuid, $targetUuids, true)) {
                     $linkedEventIds[] = $id;
@@ -3035,7 +3024,7 @@ class Event extends AppModel
         }
 
         //If extended is an array, it means that the user is filtering for both extended and not extended events
-        if (is_array($params['extending']) && count($params['extending']) === 2) {
+        if (is_array($params['extended']) && in_array(1, $params['extended']) && in_array(0, $params['extended'])) {
             return $conditions;
         }
         else{
@@ -7853,7 +7842,7 @@ class Event extends AppModel
         }
         $non_restrictive_export = !empty($exportTool->non_restrictive_export);
         $filters = $this->restSearchFilterMassage($filters, $non_restrictive_export, $user);
-        
+
         $filters = $this->addFiltersFromUserSettings($user, $filters);
         if (empty($exportTool->mock_query_only)) {
             $filters['include_attribute_count'] = 1;
