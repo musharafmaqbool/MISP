@@ -154,6 +154,8 @@ class Event extends AppModel
         'eventsExtendingUuid',
         'extended',
         'extending',
+        'include_extended',
+        'include_extending',
         'extensionList',
         'excludeGalaxy',
         // 'includeCustomGalaxyCluster', // not used
@@ -2317,12 +2319,12 @@ class Event extends AppModel
                 $event = $this->Sightingdb->attachToEvent($event, $user);
             }
         }
-        if ($options['extended']) {
+        if ($options['include_extended']) {
             foreach ($results as $k => $result) {
                 $results[$k] = $this->__mergeExtensions($user, $result, $options);
             }
         }
-        if ($options['extending']) {
+        if ($options['include_extending']) {
             foreach ($results as $k => $result) {
                 $results[$k] = $this->__mergeExtensions($user, $result, $options);
             }
@@ -2572,7 +2574,7 @@ class Event extends AppModel
             'sgReferenceOnly' => $options['sgReferenceOnly'],
             'includeAnalystData' => $options['includeAnalystData'],
         ];
-        if (!empty($options['extending'])) {
+        if (!empty($options['include_extending'])) {
             $fetchOptions['event_uuid'] = $event['Event']['extends_uuid'];
         } else {
             $fetchOptions['eventsExtendingUuid'] = $event['Event']['uuid'];
