@@ -672,6 +672,32 @@ class EventsController extends AppController
                     $this->paginate['conditions']['AND'][] = array('Event.id' => $eventIds);
 
                     break;
+                case 'extending':
+                    if ($v == "") {
+                        continue 2;
+                    }
+                    $params = ["extending" => $v];
+                    $conditions = array();
+                    $conditions = $this->Event->set_filter_extending($params, $conditions, null);
+                    if (!empty($conditions['AND'])) {
+                        foreach ($conditions['AND'] as $cond) {
+                            $this->paginate['conditions']['AND'][] = $cond;
+                        }
+                    }
+                    break;
+                case 'extended':
+                    if ($v == "") {
+                        continue 2;
+                    }
+                    $params = ["extended" => $v];
+                    $conditions = array();
+                    $conditions = $this->Event->set_filter_extended($params, $conditions, null);
+                    if (!empty($conditions['AND'])) {
+                        foreach ($conditions['AND'] as $cond) {
+                            $this->paginate['conditions']['AND'][] = $cond;
+                        }
+                    }
+                    break;
                 default:
                     continue 2;
             }
@@ -684,9 +710,10 @@ class EventsController extends AppController
     {
         // list the events
         $urlparams = "";
-        $overrideAbleParams = array('all', 'attribute', 'published', 'eventid', 'datefrom', 'dateuntil', 'org', 'eventinfo', 'tag', 'tags', 'distribution', 'sharinggroup', 'analysis', 'threatlevel', 'email', 'hasproposal', 'timestamp', 'publishtimestamp', 'publish_timestamp', 'minimal', 'value');
+        $overrideAbleParams = array('all', 'attribute', 'published', 'eventid', 'datefrom', 'dateuntil', 'org', 'eventinfo', 'tag', 'tags', 'distribution', 'sharinggroup', 'analysis', 'threatlevel', 'email', 'hasproposal', 'timestamp', 'publishtimestamp', 'publish_timestamp', 'minimal', 'value', 'extending', 'extended');
         $paginationParams = array('limit', 'page', 'sort', 'direction', 'order');
         $passedArgs = $this->passedArgs;
+
         if (!empty($this->request->data)) {
             if (isset($this->request->data['request'])) {
                 $this->request->data = $this->request->data['request'];
@@ -1111,6 +1138,8 @@ class EventsController extends AppController
             'analysis' => array('OR' => array(), 'NOT' => array()),
             'attribute' => array('OR' => array(), 'NOT' => array()),
             'hasproposal' => 2,
+            'extending' => 2,
+            'extended' => 2,
             'timestamp' => array('from' => "", 'until' => ""),
             'publishtimestamp' => array('from' => "", 'until' => "")
         );
@@ -1124,6 +1153,8 @@ class EventsController extends AppController
                 $searchTerm = substr($k, 6);
                 switch ($searchTerm) {
                     case 'published':
+                    case 'extending':
+                    case 'extended':
                     case 'hasproposal':
                         $filtering[$searchTerm] = $v;
                         break;
@@ -1179,6 +1210,8 @@ class EventsController extends AppController
             'distribution' => __('Distribution'),
             'sharinggroup' => __('Sharing group'),
             'analysis' => __('Analysis'),
+            'extending' => __('Extends'),
+            'extended'  => __('Is extended'),
             'attribute' => __('Attribute'),
             'hasproposal' => __('Has proposal'),
             'timestamp' => __('Last change at'),

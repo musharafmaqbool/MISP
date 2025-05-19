@@ -1383,7 +1383,7 @@ function submitPopoverForm(context_id, referer, update_context_id, modal, popove
                     $(".loading").show();
                 }
             }
-        },
+        }, 
         data: $form.serialize(),
         success: function (data) {
             if (closePopover) {
@@ -2176,9 +2176,19 @@ function indexEvaluateFiltering() {
             $('#value_published').html("");
         }
         if (filtering.hasproposal != 2) {
-            $('#value_hasproposal').html(publishedOptions[filtering.hasproposal]);
+            $('#value_hasproposal').html(hasproposalOptions[filtering.hasproposal]);
         } else {
             $('#value_hasproposal').html("");
+        }
+        if (filtering.extending != 2) {
+            $('#value_extending').html(extendsOptions[filtering.extending]);
+        } else {
+            $('#value_extending').html("");
+        }
+        if (filtering.extended != 2) {
+            $('#value_extended').html(extendsOptions[filtering.extended]);
+        } else {
+            $('#value_extended').html("");
         }
         if (filtering.date.from != null) {
             var text = "";
@@ -2416,6 +2426,14 @@ function indexCreateFilters() {
             if (text != "") text += "/";
             text += "searchhasproposal:" + filtering.hasproposal;
         }
+        if (filtering.extending != "2") {
+            if (text != "") text += "/";
+            text += "searchextending:" + filtering.extending;
+        }
+        if (filtering.extended != "2") {
+            if (text != "") text += "/";
+            text += "searchextended:" + filtering.extended;
+        }
     } else {
         for (var i = 0; i < differentFilters.length; i++) {
             if (filtering[differentFilters[i]]) {
@@ -2538,6 +2556,12 @@ function indexAddRule(param) {
         } else if (param.data.param1 == "hasproposal") {
             var value = encodeURIComponent($('#EventSearchhasproposal').val());
             if (value != "") filtering.hasproposal = value;
+        } else if (param.data.param1 == "extending") {
+            var value = encodeURIComponent($('#EventSearchextending').val());
+            if (value != "") filtering.extending = value; 
+        } else if (param.data.param1 == "extended") {
+            var value = encodeURIComponent($('#EventSearchextended').val());
+            if (value != "") filtering.extended = value;
         } else {
             var value = encodeURIComponent($('#EventSearch' + param.data.param1).val());
             var operator = operators[encodeURIComponent($('#EventSearchbool').val())];
@@ -2603,6 +2627,10 @@ function indexFilterClearRow(field) {
         filtering.published = 2;
     } else if (field == "hasproposal") {
         filtering.hasproposal = 2;
+    } else if (field == "extending") {
+        filtering.extending = 2;
+    } else if (field == "extended") {
+        filtering.extended = 2;
     } else if (differentFilters.indexOf(field) != -1) {
         filtering[field] = "";
     } else {
