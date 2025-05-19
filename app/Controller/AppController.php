@@ -1413,8 +1413,21 @@ class AppController extends Controller
             return $exception;
         }
         if (empty($filters['returnFormat'])) {
-            $filters['returnFormat'] = 'json';
+            $acceptHeader = $this->request->header('Accept');
+
+            if (preg_match('#application/([a-zA-Z0-9\-\+]+)#', $acceptHeader, $matches)) {
+                $format = strtolower(trim($matches[1]));
+            } elseif (preg_match('#text/csv#', $acceptHeader, $matches)) {
+                $format = 'csv';
+            } else {
+                $format = 'json';
+            }
+        
+            if (isset($this->$modelName->validFormats[$format])) {
+                $filters['returnFormat'] = $format;
+            }
         }
+        
         unset($filterData);
 
         $user = $this->_closeSession();
