@@ -94,10 +94,10 @@ $fields[] = [
         $default = (int) Configure::read('MISP.default_restsearch_limit');
         $value = $row['Role']['restsearch_limit_result'];
         if (is_null($value) && !$row['Role']['perm_site_admin']) {
-            return __('Undefined - Fallback to server default (%s)', h($default));
+            return __('Undefined - Fallback to <strong>Server Default (%s)</strong>', h($default));
         }
         else if (is_null($value) && $row['Role']['perm_site_admin']) {
-            return __('Undefined - Fallback to Unlimited as Site Admin', h($default));
+            return __('Undefined - Fallback to <strong>Unlimited as Site Admin<strong>', h($default));
         }
         return (empty($value) ? __('Unlimited') : h($value));
     },
