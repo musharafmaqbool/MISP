@@ -62,6 +62,9 @@ class AttributesController extends AppController
             if ($key === 'to_ids' && $value === '0') {
                 unset($filters[$key]);
             }
+            if ($key === 'enforceWarninglist' && $value === '0') {
+                unset($filters[$key]);
+            }
             if (is_array($value)) {
                 $filters[$key] = $this->cleanDefaultFormValues($value);
             } elseif ($value === '') {
@@ -110,7 +113,11 @@ class AttributesController extends AppController
         }
         $this->set('params', $params);
         $conditions = $this->MispAttribute->buildFilterConditions($user, $filters, false);
-        $params = [];
+
+        if (isset($params['enforceWarninglist'])) {
+            $params['enforceWarninglist'] = 1;
+        }
+
         if (!empty($filters['direction'])) {
             $params['direction'] = $filters['direction'];
         }
@@ -125,6 +132,7 @@ class AttributesController extends AppController
             $params['conditions'] = $conditions;
         }
         $params['flatten'] = 1;
+        $params['includeWarninglistHits'] = 1;
         if ($this->_isRest()) {
             if (!empty($filters['page'])) {
                 $params['page'] = $filters['page'];
@@ -2911,6 +2919,7 @@ class AttributesController extends AppController
                 $attribute['Attribute']['disable_correlation'] = 1;
             }
             $this->MispAttribute->save($attribute, ['parentEvent' => $attribute]);
+            $this->MispAttribute->touch($attribute);
             if ($this->_isRest()) {
                 return $this->RestResponse->saveSuccessResponse('attributes', 'toggleCorrelation', $id, false, 'Correlation ' . ($attribute['Attribute']['disable_correlation'] ? 'disabled' : 'enabled') . '.');
             } else {

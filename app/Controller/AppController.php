@@ -33,8 +33,8 @@ class AppController extends Controller
 
     public $helpers = array('OrgImg', 'FontAwesome', 'UserName');
 
-    private $__queryVersion = '171';
-    public $pyMispVersion = '2.5.7';
+    private $__queryVersion = '175';
+    public $pyMispVersion = '2.5.10';
     public $phpmin = '8.1';
     public $phprec = '8.2';
     public $phptoonew = '9.0';
@@ -1413,8 +1413,21 @@ class AppController extends Controller
             return $exception;
         }
         if (empty($filters['returnFormat'])) {
-            $filters['returnFormat'] = 'json';
+            $acceptHeader = $this->request->header('Accept');
+
+            if (preg_match('#application/([a-zA-Z0-9\-\+]+)#', $acceptHeader, $matches)) {
+                $format = strtolower(trim($matches[1]));
+            } elseif (preg_match('#text/csv#', $acceptHeader, $matches)) {
+                $format = 'csv';
+            } else {
+                $format = 'json';
+            }
+        
+            if (isset($this->$modelName->validFormats[$format])) {
+                $filters['returnFormat'] = $format;
+            }
         }
+        
         unset($filterData);
 
         $user = $this->_closeSession();
@@ -1446,11 +1459,21 @@ class AppController extends Controller
         /** @var TmpFileTool $final */
         $skippedElementsCounter = 0;
         $final = $model->restSearch($user, $returnFormat, $filters, false, false, $elementCounter, $renderView, $skippedElementsCounter);
+        $responseTypeMapping = [
+            'json' => 'application/json',
+            'html' => 'text/html',
+            'text' => 'text/plain',
+            'xml' => 'application/xml'
+        ];
         if ($renderView) {
             $this->layout = false;
             $final = JsonTool::decode($final->intoString());
             $this->set($final);
             $this->render('/Events/module_views/' . $renderView);
+            if (isset($responseTypeMapping[$responseType])) {
+                $this->response->type($responseTypeMapping[$responseType]);
+            }
+            return $this->response;
         } else {
             if (!empty($filters['sign'])) {
                 $this->RestResponse->signContents = true;

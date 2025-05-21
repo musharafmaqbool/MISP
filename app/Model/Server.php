@@ -2970,7 +2970,7 @@ class Server extends AppModel
         if ($response === false && $localVersion['hotfix'] < $remoteVersion[2]) {
             $response = "Sync to Server ('{$server['Server']['id']}') initiated, but the remote instance is a few hotfixes ahead. Make sure you keep your instance up to date!";
         }
-        if (empty($response) && $remoteVersion[2] < 111) {
+        if (empty($response) && $remoteVersion[1] <= 4 && $remoteVersion[2] < 111) {
             $response = "Sync to Server ('{$server['Server']['id']}') initiated, but version 2.4.111 is required in order to be able to pull proposals from the remote side.";
         }
 
@@ -5651,7 +5651,7 @@ class Server extends AppModel
                 ),
                 'download_attachments_on_load' => array(
                     'level' => 2,
-                    'description' => __('Always download attachments when loaded by a user in a browser'),
+                    'description' => __('Always download attachments when loaded by a user in a browser. It is highly recommended to leave this setting on true, as otherwise opening an attachment can lead to the execution of malicious code via XSS.'),
                     'value' => true,
                     'test' => 'testBool',
                     'type' => 'boolean',
@@ -6945,7 +6945,7 @@ class Server extends AppModel
                 ],
                 'otp_required' => array(
                     'level' => 2,
-                    'description' => __('Require authentication with OTP. Users that do not have (T/H)OTP configured will be forced to create a token at first login. You cannot use it in combination with external authentication plugins.'),
+                    'description' => __('Require authentication with OTP. Users that do not have (T/H)OTP configured will be forced to create a token at first login.'),
                     'value' => false,
                     'test' => 'testBool',
                     'beforeHook' => 'otpBeforeHook',
@@ -7772,14 +7772,16 @@ class Server extends AppModel
                     'description' => __('AWS key to use when uploading samples (WARNING: It\' highly recommended that you use EC2 IAM roles if at all possible)'),
                     'value' => '',
                     'test' => 'testForEmpty',
-                    'type' => 'string'
+                    'type' => 'string',
+                    'redacted' => true
                 ),
                 'S3_aws_secret_key' => array(
                     'level' => 2,
                     'description' => __('AWS secret key to use when uploading samples'),
                     'value' => '',
                     'test' => 'testForEmpty',
-                    'type' => 'string'
+                    'type' => 'string',
+                    'redacted' => true
                 ),
                 'Sightings_policy' => array(
                     'level' => 1,

@@ -57,6 +57,7 @@ class EventsController extends AppController
 
     // private
     const DEFAULT_HIDDEN_INDEX_COLUMNS = [
+        'extending',
         'timestamp',
         'publish_timestamp'
     ];
@@ -671,6 +672,32 @@ class EventsController extends AppController
                     $this->paginate['conditions']['AND'][] = array('Event.id' => $eventIds);
 
                     break;
+                case 'extending':
+                    if ($v == "") {
+                        continue 2;
+                    }
+                    $params = ["extending" => $v];
+                    $conditions = array();
+                    $conditions = $this->Event->set_filter_extending($params, $conditions, null);
+                    if (!empty($conditions['AND'])) {
+                        foreach ($conditions['AND'] as $cond) {
+                            $this->paginate['conditions']['AND'][] = $cond;
+                        }
+                    }
+                    break;
+                case 'extended':
+                    if ($v == "") {
+                        continue 2;
+                    }
+                    $params = ["extended" => $v];
+                    $conditions = array();
+                    $conditions = $this->Event->set_filter_extended($params, $conditions, null);
+                    if (!empty($conditions['AND'])) {
+                        foreach ($conditions['AND'] as $cond) {
+                            $this->paginate['conditions']['AND'][] = $cond;
+                        }
+                    }
+                    break;
                 default:
                     continue 2;
             }
@@ -683,9 +710,10 @@ class EventsController extends AppController
     {
         // list the events
         $urlparams = "";
-        $overrideAbleParams = array('all', 'attribute', 'published', 'eventid', 'datefrom', 'dateuntil', 'org', 'eventinfo', 'tag', 'tags', 'distribution', 'sharinggroup', 'analysis', 'threatlevel', 'email', 'hasproposal', 'timestamp', 'publishtimestamp', 'publish_timestamp', 'minimal', 'value');
+        $overrideAbleParams = array('all', 'attribute', 'published', 'eventid', 'datefrom', 'dateuntil', 'org', 'eventinfo', 'tag', 'tags', 'distribution', 'sharinggroup', 'analysis', 'threatlevel', 'email', 'hasproposal', 'timestamp', 'publishtimestamp', 'publish_timestamp', 'minimal', 'value', 'extending', 'extended');
         $paginationParams = array('limit', 'page', 'sort', 'direction', 'order');
         $passedArgs = $this->passedArgs;
+
         if (!empty($this->request->data)) {
             if (isset($this->request->data['request'])) {
                 $this->request->data = $this->request->data['request'];
@@ -760,6 +788,18 @@ class EventsController extends AppController
         $this->set('urlparams', $urlparams);
         $this->set('passedArgsArray', $passedArgsArray);
         $this->set('passedArgs', json_encode($passedArgs));
+
+        $extendedUuids = array_filter(array_map(fn($event) => $event['Event']['extends_uuid'] ?? null, $events));
+
+        if ($extendedUuids) {
+            $extendedEvents = $this->Event->fetchSimpleEvents(
+                $this->Auth->user(),
+                ['conditions' => ['Event.uuid' => $extendedUuids]]
+            );
+            $this->set('extendedEvents', array_column($extendedEvents, 'Event', 'uuid'));
+        } else {
+            $this->set('extendedEvents', []);
+        }
 
         if ($this->request->is('ajax')) {
             $this->autoRender = false;
@@ -970,6 +1010,8 @@ class EventsController extends AppController
             $possibleColumns[] = 'owner_org';
         }
 
+        $possibleColumns[] = 'extending';
+
         if (Configure::read('MISP.tagging')) {
             $possibleColumns[] = 'clusters';
             $possibleColumns[] = 'tags';
@@ -1000,7 +1042,7 @@ class EventsController extends AppController
         if ($this->_isSiteAdmin()) {
             $possibleColumns[] = 'creator_user';
         }
-
+ 
         $possibleColumns[] = 'timestamp';
         $possibleColumns[] = 'publish_timestamp';
 
@@ -1096,6 +1138,8 @@ class EventsController extends AppController
             'analysis' => array('OR' => array(), 'NOT' => array()),
             'attribute' => array('OR' => array(), 'NOT' => array()),
             'hasproposal' => 2,
+            'extending' => 2,
+            'extended' => 2,
             'timestamp' => array('from' => "", 'until' => ""),
             'publishtimestamp' => array('from' => "", 'until' => "")
         );
@@ -1109,6 +1153,8 @@ class EventsController extends AppController
                 $searchTerm = substr($k, 6);
                 switch ($searchTerm) {
                     case 'published':
+                    case 'extending':
+                    case 'extended':
                     case 'hasproposal':
                         $filtering[$searchTerm] = $v;
                         break;
@@ -1164,6 +1210,8 @@ class EventsController extends AppController
             'distribution' => __('Distribution'),
             'sharinggroup' => __('Sharing group'),
             'analysis' => __('Analysis'),
+            'extending' => __('Extends'),
+            'extended'  => __('Is extended'),
             'attribute' => __('Attribute'),
             'hasproposal' => __('Has proposal'),
             'timestamp' => __('Last change at'),
@@ -5939,7 +5987,7 @@ class EventsController extends AppController
             $results = $this->Event->runWorkflow($id, $workflow_ids);
             $succesMessage = __('Successfully ran %s Workflows on Event %s', count($workflow_ids), h($id));
             $errorMessage = __('Error(s) while running Workflow(s): ') . implode(', ', $results['error_messages']);
-            if ($this->_isRest()) {
+            if ($this->_isRest() || $this->request->is('ajax')) {
                 return $this->RestResponse->saveSuccessResponse('Events', 'runWorkflow', $id, $this->response->type(), $results['success_count'] > 0 ? $succesMessage : $errorMessage);
             } else {
                 if ($results['success_count'] > 0) {

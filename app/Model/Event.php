@@ -588,7 +588,7 @@ class Event extends AppModel
         return $this->unpublishEvent($event_id);
     }
 
-    public function attachTagsToEventAndTouch($event_id, array $options, array $user)
+    public function attachTagsToEventAndTouch($event_id, array $options, array $user, array &$tagAttached = [])
     {
         $tags = $options['tags'];
         $local = $options['local'];
@@ -611,6 +611,9 @@ class Event extends AppModel
                 'relationship_type' => $relationship,
             ];
             $attachSuccess = $this->EventTag->attachTagToEvent($event_id, $tag, $nothingToChange);
+            if ($attachSuccess) {
+                $tagAttached[] = $tag_name;
+            }
             $success = $success || $attachSuccess;
             $touchEvent = $touchEvent || !$nothingToChange;
         }
@@ -620,7 +623,7 @@ class Event extends AppModel
         return $success;
     }
 
-    public function detachTagsFromEventAndTouch($event_id, array $options)
+    public function detachTagsFromEventAndTouch($event_id, array $options, array &$tagDetached = [])
     {
         $tags = $options['tags'];
         $local = $options['local'];
@@ -634,6 +637,9 @@ class Event extends AppModel
                 continue;
             }
             $detachSuccess = $this->EventTag->detachTagFromEvent($event_id, $tag_id, $local, $nothingToChange);
+            if ($detachSuccess) {
+                $tagDetached[] = $tag_name;
+            }
             $success = $success || $detachSuccess;
             $touchEvent = $touchEvent || !$nothingToChange;
         }
@@ -1551,6 +1557,8 @@ class Event extends AppModel
                     'orgc_id' => array('function' => 'set_filter_orgc_id', 'pop' => true),
                     'uuid' => array('function' => 'set_filter_uuid', 'pop' => true),
                     'published' => array('function' => 'set_filter_published', 'pop' => true),
+                    'extended' => array('function' => 'set_filter_extended', 'pop' => true),
+                    'extending' => array('function' => 'set_filter_extending', 'pop' => true),
                     'threat_level_id' => array('function' => 'set_filter_threat_level_id', 'pop' => true),
                     'sharinggroup' => array('function' => 'set_filter_sharing_group')
                 ),
@@ -1911,6 +1919,12 @@ class Event extends AppModel
         }
         if (isset($options['published'])) {
             $conditions['AND'][] = array('Event.published' => $options['published']);
+        }
+        if (isset($options['extended'])) {
+            $conditions = $this->set_filter_extended($options, $conditions, null);
+        }
+        if (isset($options['extending'])) {
+            $conditions = $this->set_filter_extending($options, $conditions, null);
         }
         if ($options['orgc_id']) {
             $conditions['AND'][] = array('Event.orgc_id' => $options['orgc_id']);
@@ -2942,6 +2956,96 @@ class Event extends AppModel
         }
         return $conditions;
     }
+
+
+    public function set_filter_extended(&$params, $conditions, $options)
+    {
+        if (!isset($params['extended'])) {
+            return $conditions;
+        }
+
+        $extended = null;
+        //If extended is an array, it means that the user is filtering for both extended and not extended events
+        if (is_array($params['extended']) && in_array(1, $params['extended']) && in_array(0, $params['extended'])) {
+            return $conditions;
+        //Accept if extended is [0] or [1] and converting it to boolean
+        } else if (is_array($params['extended']) && (in_array(1, $params['extended'] ) || in_array(0, $params['extended']))) {
+            $extended = filter_var($params['extended'][0], FILTER_VALIDATE_BOOLEAN);
+        } else {
+            $extended = filter_var($params['extended'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        //Step 1 - Extract the UUIDs of the events that are extended and remove duplicates
+        $targetUuids = array_unique($this->find('column', array(
+            'fields' => array('Event.extends_uuid'),
+            'conditions' => array('Event.extends_uuid !=' => ''),
+            'recursive' => -1
+        )));
+
+        //If there is no event with extends_uuid(extending), there is basically no event extended
+        if (empty($targetUuids)) {
+            $conditions['AND'][] = array('Event.id' => -1);
+            return $conditions;
+        }
+
+        //Step 2 - Extract the UUIDs and ids of all events
+        $allEvents = $this->find('list', array(
+            'fields' => array('Event.uuid', 'Event.id'),
+            'recursive' => -1
+        ));
+
+        //Step 3 - Fetch the events that are extended or not extended
+        $linkedEventIds = array();
+        if ($extended) {
+            foreach ($targetUuids as $uuid) {
+                if (isset($allEvents[$uuid])) {
+                    $linkedEventIds[] = $allEvents[$uuid];
+                }
+            }
+        } else {
+            foreach ($allEvents as $uuid => $id) {
+                if (!in_array($uuid, $targetUuids, true)) {
+                    $linkedEventIds[] = $id;
+                }
+            }
+        }
+
+        if (empty($linkedEventIds)) {
+            $conditions['AND'][] = array('Event.id' => -1);
+        } else {
+            $conditions['AND'][] = array('Event.id' => $linkedEventIds);
+        }
+
+        return $conditions;
+    }
+
+
+
+    public function set_filter_extending(&$params, $conditions, $options)
+    {
+        if (!isset($params['extending'])) {
+            return $conditions;
+        }
+
+        $extending = null;
+        //If extended is an array, it means that the user is filtering for both extended and not extended events
+        if (is_array($params['extending']) && in_array(1, $params['extending']) && in_array(0, $params['extending'])) {
+            return $conditions;
+        //Accept if extended is [0] or [1] and converting it to boolean
+        } else if (is_array($params['extending']) && (in_array(1, $params['extending'] ) || in_array(0, $params['extending']))) {
+            $extending = filter_var($params['extending'][0], FILTER_VALIDATE_BOOLEAN);
+        } else{
+            $extending = filter_var($params['extending'], FILTER_VALIDATE_BOOLEAN);
+        }
+
+        if ($extending) {
+            $conditions['AND'][] = array('Event.extends_uuid !=' => '');
+        } else {
+            $conditions['AND'][] = array('Event.extends_uuid' => '');
+        }
+        return $conditions;
+    }
+
 
     public function set_filter_threat_level_id(&$params, $conditions, $options)
     {
@@ -5260,11 +5364,28 @@ class Event extends AppModel
                 return null;
             }
 
-            if ($filterType['warning'] == 0) { // `both`
-                // pass, do not consider as `both` is selected
-            } else if (!empty($attribute['warnings']) || !empty($attribute['validationIssue'])) { // `include only`
-                $include = $include && ($filterType['warning'] == 1);
-            } else { // `exclude`
+            if ($filterType['warning'] == 0) { // `all`
+                // pass, do not consider as `all` is selected
+            } else if (!empty($attribute['warnings']) || !empty($attribute['validationIssue'])) {
+                $hasFalsePositive = false;
+                $hasKnown = false;
+                if (!empty($attribute['warnings'])) {
+                    foreach ($attribute['warnings'] as $warning) {
+                        if ($warning['warninglist_category'] === 'false_positive') {
+                            $hasFalsePositive = true;
+                        } elseif ($warning['warninglist_category'] === 'known') {
+                            $hasKnown = true;
+                        }
+                    }
+                }
+                if ($filterType['warning'] == 3) { // False positive
+                    $include = $include && $hasFalsePositive;
+                } elseif ($filterType['warning'] == 4) { // Known identifier
+                    $include = $include && $hasKnown;
+                } else {
+                    $include = $include && ($filterType['warning'] == 1); // include only
+                }
+            } else { // exclude
                 $include = $include && ($filterType['warning'] == 2);
             }
 
