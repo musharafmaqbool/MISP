@@ -673,14 +673,6 @@ class EventsController extends AppController
 
                     break;
                 case 'extending':
-                    if (is_array($v) && in_array(1, $v) && in_array(0, $v)) {
-                        continue 2; // both
-                    }
-                    else if (is_array($v) && (in_array(1, $v) || in_array(0, $v))) {
-                        $v = filter_var($v[0], FILTER_VALIDATE_BOOLEAN);
-                    } else {
-                        $v = filter_var($v, FILTER_VALIDATE_BOOLEAN);
-                    }
                     $params = ["extending" => $v];
                     $conditions = array();
                     $conditions = $this->Event->set_filter_extending($params, $conditions, null);
@@ -691,14 +683,6 @@ class EventsController extends AppController
                     }
                     break;
                 case 'extended':
-                    if (is_array($v) && in_array(1, $v) && in_array(0, $v)) {
-                        continue 2; // both
-                    }
-                    else if (is_array($v) && (in_array(1, $v) || in_array(0, $v))) {
-                        $v = filter_var($v[0], FILTER_VALIDATE_BOOLEAN);
-                    } else {
-                        $v = filter_var($v, FILTER_VALIDATE_BOOLEAN);
-                    }
                     $params = ["extended" => $v];
                     $conditions = array();
                     $conditions = $this->Event->set_filter_extended($params, $conditions, null);
