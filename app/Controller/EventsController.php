@@ -673,9 +673,6 @@ class EventsController extends AppController
 
                     break;
                 case 'extending':
-                    if ($v == "") {
-                        continue 2;
-                    }
                     $params = ["extending" => $v];
                     $conditions = array();
                     $conditions = $this->Event->set_filter_extending($params, $conditions, null);
@@ -686,9 +683,6 @@ class EventsController extends AppController
                     }
                     break;
                 case 'extended':
-                    if ($v == "") {
-                        continue 2;
-                    }
                     $params = ["extended" => $v];
                     $conditions = array();
                     $conditions = $this->Event->set_filter_extended($params, $conditions, null);
