@@ -1277,17 +1277,17 @@ class EventsController extends AppController
             'noSightings' => true,
             'includeServerCorrelations' => $filters['includeServerCorrelations'] ?? 1,
         ];
-        if (isset($filters['extended'])) {
-            $conditions['extended'] = 1;
-            $this->set('extended', 1);
+        if (isset($filters['include_extended'])) {
+            $conditions['include_extended'] = 1;
+            $this->set('include_extended', 1);
         } else {
-            $this->set('extended', 0);
+            $this->set('include_extended', 0);
         }
-        if (!empty($filters['extending'])) {
-            $conditions['extending'] = 1;
-            $this->set('extending', 1);
+        if (!empty($filters['include_extending'])) {
+            $conditions['include_extending'] = 1;
+            $this->set('include_extending', 1);
         } else {
-            $this->set('extending', 0);
+            $this->set('include_extending', 0);
         }
         if (!empty($filters['overrideLimit'])) {
             $conditions['overrideLimit'] = 1;
@@ -1405,7 +1405,7 @@ class EventsController extends AppController
         }
         $this->params->params['paging'] = array($this->modelClass => $params);
         $this->set('event', $event);
-        $this->set('includeOrgColumn', (isset($conditions['extended']) || isset($conditions['extending']) || $containsProposals));
+        $this->set('includeOrgColumn', (isset($conditions['include_extended']) || isset($conditions['include_extending']) || $containsProposals));
         $this->set('includeSightingdb', (!empty($filters['includeSightingdb']) && Configure::read('Plugin.Sightings_sighting_db_enable')));
         $this->set('deleted', isset($filters['deleted']) && $filters['deleted'] != 0);
         $this->set('attributeFilter', isset($filters['attributeFilter']) ? $filters['attributeFilter'] : 'all');
@@ -1650,7 +1650,7 @@ class EventsController extends AppController
         if (!empty($filters['includeSightingdb']) && Configure::read('Plugin.Sightings_sighting_db_enable')) {
             $this->set('sightingdbs', $this->Sightingdb->getSightingdbList($user));
         }
-        $this->set('includeOrgColumn', $this->viewVars['extended'] || $this->viewVars['extending'] || $containsProposals);
+        $this->set('includeOrgColumn', $this->viewVars['include_extended'] || $this->viewVars['include_extending'] || $containsProposals);
         $this->set('includeSightingdb', !empty($filters['includeSightingdb']) && Configure::read('Plugin.Sightings_sighting_db_enable'));
         $this->set('relatedEventCorrelationCount', $relatedEventCorrelationCount);
         $this->set('oldest_timestamp', $oldestTimestamp === PHP_INT_MAX ? false : $oldestTimestamp);
@@ -1781,17 +1781,17 @@ class EventsController extends AppController
                 $conditions['includeCustomGalaxyCluster'] = 1;
             }
         }
-        if (!empty($namedParams['extended']) || !empty($this->request->data['extended'])) {
-            $conditions['extended'] = 1;
-            $this->set('extended', 1);
+        if (!empty($namedParams['include_extended']) || !empty($this->request->data['include_extended'])) {
+            $conditions['include_extended'] = 1;
+            $this->set('include_extended', 1);
         } else {
-            $this->set('extended', 0);
+            $this->set('include_extended', 0);
         }
-        if (!empty($namedParams['extending']) || !empty($this->request->data['extending'])) {
-            $conditions['extending'] = 1;
-            $this->set('extending', 1);
+        if (!empty($namedParams['include_extending']) || !empty($this->request->data['include_extending'])) {
+            $conditions['include_extending'] = 1;
+            $this->set('include_extending', 1);
         } else {
-            $this->set('extending', 0);
+            $this->set('include_extending', 0);
         }
         $conditions['excludeLocalTags'] = false;
         $conditions['includeWarninglistHits'] = true;
@@ -4987,7 +4987,7 @@ class EventsController extends AppController
         $dataFiltering = array_key_exists('filtering', $data) ? $data['filtering'] : array();
         $scope = isset($data['scope']) ? $data['scope'] : 'seen';
 
-        $extended = isset($this->params['named']['extended']) ? 1 : 0;
+        $extended = isset($this->params['named']['include_extended']) ? 1 : 0;
 
         $grapher->construct($this->Event, $this->Auth->user(), $dataFiltering, $extended);
         if ($scope == 'seen') {
@@ -5007,7 +5007,7 @@ class EventsController extends AppController
     public function getDistributionGraph($id, $type = 'event')
     {
         $user = $this->_closeSession();
-        $extended = isset($this->params['named']['extended']) ? 1 : 0;
+        $extended = isset($this->params['named']['include_extended']) ? 1 : 0;
         $json = $this->__genDistributionGraph($id, $type, $extended, $user);
         return $this->RestResponse->viewData($json, 'json');
     }
@@ -5023,7 +5023,7 @@ class EventsController extends AppController
         $grapher = new EventGraphTool();
         $data = $this->request->is('post') ? $this->request->data : array();
 
-        $extended = isset($this->params['named']['extended']) ? 1 : 0;
+        $extended = isset($this->params['named']['include_extended']) ? 1 : 0;
 
         $grapher->construct($this->Event, $this->Tag, $this->Auth->user(), $data['filtering'], $extended);
         $json = $grapher->get_references($id);
@@ -5047,7 +5047,7 @@ class EventsController extends AppController
         $grapher = new EventGraphTool();
         $data = $this->request->is('post') ? $this->request->data : array();
 
-        $extended = isset($this->params['named']['extended']) ? 1 : 0;
+        $extended = isset($this->params['named']['include_extended']) ? 1 : 0;
 
         $grapher->construct($this->Event, $this->Tag, $this->Auth->user(), $data['filtering'], $extended);
         $json = $grapher->get_tags($id);
@@ -5071,7 +5071,7 @@ class EventsController extends AppController
         $grapher = new EventGraphTool();
         $data = $this->request->is('post') ? $this->request->data : array();
 
-        $extended = isset($this->params['named']['extended']) ? 1 : 0;
+        $extended = isset($this->params['named']['include_extended']) ? 1 : 0;
 
         $grapher->construct($this->Event, $this->Tag, $this->Auth->user(), $data['filtering'], $extended);
         if (!array_key_exists('keyType', $data)) {
@@ -5175,7 +5175,7 @@ class EventsController extends AppController
         }
 
         if ($scope !== 'tag_collection') {
-            $event = $this->Event->fetchEvent($this->Auth->user(), array('eventid' => $eventId, 'metadata' => true, 'extended' => $extended));
+            $event = $this->Event->fetchEvent($this->Auth->user(), array('eventid' => $eventId, 'metadata' => true, 'include_extended' => $extended));
             if (empty($event)) {
                 throw new NotFoundException(__('Event not found or you are not authorised to view it.'));
             }
@@ -5258,7 +5258,7 @@ class EventsController extends AppController
         $colours = $gradientTool->createGradientFromValues($scores);
         $this->set('galaxy_id', $galaxy_id);
         $this->set('eventId', $eventId);
-        $this->set('extended', $extended);
+        $this->set('include_extended', $extended);
         $this->set('target_type', $scope);
         $this->set('columnOrders', $killChainOrders);
         $this->set('tabs', $tabs);
