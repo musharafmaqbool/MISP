@@ -10,7 +10,7 @@
             echo $this->Form->input('value', array('type' => 'textarea', 'rows' => 2, 'label' => __('Containing the following expressions'), 'div' => 'clear', 'class' => 'input-xxlarge', 'required' => false));
             echo $this->Form->input('tags', array('type' => 'textarea', 'rows' => 2, 'label' => __('Having tag or being an attribute of an event having the tag'), 'div' => 'clear', 'class' => 'input-xxlarge', 'required' => false));
             echo $this->Form->input('uuid', array('type' => 'textarea', 'rows' => 2, 'maxlength' => false, 'label' => __('Being attributes of the following event IDs, event UUIDs or attribute UUIDs'), 'div' => 'clear', 'class' => 'input-xxlarge', 'required' => false));
-            echo $this->Form->input('org_id', array(
+            echo $this->Form->input('org', array(
                 'type' => 'textarea',
                 'label' => __('From the following organisation(s)'),
                 'div' => 'input clear',
