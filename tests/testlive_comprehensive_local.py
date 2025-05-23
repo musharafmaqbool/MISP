@@ -1073,7 +1073,7 @@ class TestComprehensive(unittest.TestCase):
             self.admin_misp_connector.delete_event(event_2son_1son)
 
 
-    def warninglist_category(self):
+    def test_warninglists_category(self):
         try:
             #Create a test event
             event = create_simple_event()
