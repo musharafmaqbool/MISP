@@ -17,6 +17,14 @@
                 'rows' => 2,
                 'class' => 'input-xxlarge'
             ));
+            echo $this->Form->input('object_relation', array(
+                'type' => 'textarea',
+                'label' => __('Have the following object relation(s)'),
+                'div' => 'input clear',
+                'rows' => 2,
+                'class' => 'input-xxlarge',
+                'required' => false
+            ));
             $typeFormInfo = $this->element('genericElements/Form/formInfo', [
                 'field' => [
                     'field' => 'type'
