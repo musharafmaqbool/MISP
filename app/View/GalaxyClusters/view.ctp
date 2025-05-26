@@ -91,13 +91,20 @@ $table_data[] = array(
     'html' => $this->OrgImg->getOrgImg(array('name' => $cluster['GalaxyCluster']['Orgc']['name'], 'id' => $cluster['GalaxyCluster']['Orgc']['id'], 'size' => 18), true),
 );
 $table_data[] = array('key' => __('Connector tag'), 'value' => $cluster['GalaxyCluster']['tag_name']);
-$table_data[] = array('key' => __('Events'), 'html' => isset($cluster['GalaxyCluster']['tag_count']) ?
+$table_data[] = array('key' => __('Events 1'), 'html' => isset($cluster['GalaxyCluster']['tag_count']) ?
                     sprintf('<a href="%s">%s</a>',
                         sprintf('%s/events/index/searchtag:%s', $baseurl, h($cluster['GalaxyCluster']['tag_id'])),
                         __n('%s event', '%s events', $cluster['GalaxyCluster']['tag_count'], h($cluster['GalaxyCluster']['tag_count']))
                     ):
                     '<span>0</span>'
                 );
+$table_data[] = array('key' => __('Attributes'), 'html' => isset($cluster['GalaxyCluster']['tag_att_count']) ?
+                    sprintf('<a href="%s">%s</a>',
+                        sprintf('%s/attributes/index?tags=%s', $baseurl, h($cluster['GalaxyCluster']['tag_id'])),
+                        __n('%s attribute', '%s attributes', $cluster['GalaxyCluster']['tag_att_count'], h($cluster['GalaxyCluster']['tag_att_count']))
+                    ):
+                    '<span>0</span>'
+);
 if (!empty($extendedFromHtml)) {
     $table_data[] = array('key' => __('Forked From'), 'html' => $extendedFromHtml);
 }

@@ -240,6 +240,17 @@ class AttributeTag extends AppModel
         }
     }
 
+      /**
+     * @param int $tagId
+     * @param array $user
+     * @return int
+     */
+    public function countForTag($tagId, array $user)
+    {
+        $count = $this->countForTags([$tagId], $user);
+        return isset($count[$tagId]) ? (int)$count[$tagId] : 0;
+    }
+
     /**
      * @param array $tagIds
      * @param array $user - Currently ignored for performance reasons
@@ -250,15 +261,36 @@ class AttributeTag extends AppModel
         if (empty($tagIds)) {
             return [];
         }
-        $this->virtualFields['attribute_count'] = 'COUNT(AttributeTag.id)';
-        $counts = $this->find('list', [
-            'recursive' => -1,
-            'fields' => ['AttributeTag.tag_id', 'attribute_count'],
+        // First, we fetch the attribute that are associated with the tags
+        $attributeIdsFromTags = $this->Attribute->AttributeTag->find('list', [
+            'fields' => ['AttributeTag.attribute_id'],
             'conditions' => ['AttributeTag.tag_id' => $tagIds],
-            'group' => ['AttributeTag.tag_id'],
+            'recursive' => -1
         ]);
-        unset($this->virtualFields['attribute_count']);
-        return $counts;
+
+        // Then, we fetch the events that are associated with the tags
+        $eventIdsFromTags = $this->Attribute->Event->EventTag->find('list', [
+            'fields' => ['EventTag.event_id'],
+            'conditions' => [
+                'EventTag.tag_id' => $tagIds
+            ],
+            'recursive' => -1
+        ]);
+
+        // Finally, we fetch the attributes that are associated with the events
+        $attributeIdsFromEvents = [];
+        if (!empty($eventIdsFromTags)) {
+            $attributeIdsFromEvents = $this->Attribute->find('list', [
+                'fields' => ['Attribute.id'],
+                'conditions' => [
+                    'Attribute.event_id' => $eventIdsFromTags,
+                ],
+                'recursive' => -1
+            ]);
+        }
+        // Now we can merge the two lists of attribute to get both attributes from tags and attributes from events with the same tag
+        $attributeIds = array_unique(array_merge(array_values($attributeIdsFromTags), array_values($attributeIdsFromEvents)));
+        return [$tagIds[0] => count($attributeIds)];
     }
 
     // Fetch all tags attached to attribute belonging to supplied event. No ACL if user not provided
