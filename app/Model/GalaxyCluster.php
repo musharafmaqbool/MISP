@@ -820,6 +820,7 @@ class GalaxyCluster extends AppModel
             }
             if ($cluster['GalaxyCluster']['version'] > $existingGalaxyCluster['GalaxyCluster']['version']) {
                 $cluster['GalaxyCluster']['id'] = $existingGalaxyCluster['GalaxyCluster']['id'];
+                $cluster['GalaxyCluster']['galaxy_id'] = $existingGalaxyCluster['GalaxyCluster']['galaxy_id'];
                 $saveSuccess = $this->save($cluster);
             } else {
                 $results['errors'][] = __('Remote version is not newer than local one for cluster (%s)', $cluster['GalaxyCluster']['uuid']);
