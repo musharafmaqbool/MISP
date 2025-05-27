@@ -1367,6 +1367,7 @@ function submitPopoverForm(context_id, referer, update_context_id, modal, popove
     if (!url.startsWith('http')) {
         url = baseurl + url;
     }
+    var formData = new FormData($form[0])
     $.ajax({
         beforeSend: function () {
             if (modal) {
@@ -1384,7 +1385,9 @@ function submitPopoverForm(context_id, referer, update_context_id, modal, popove
                 }
             }
         }, 
-        data: $form.serialize(),
+        data: formData,
+        processData: false,
+        contentType: false,
         success: function (data) {
             if (closePopover) {
                 if (modal) {
