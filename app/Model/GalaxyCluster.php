@@ -1081,6 +1081,12 @@ class GalaxyCluster extends AppModel
                 'Org',
                 'SharingGroup'
             );
+            // Fixes issue where CakePHP 2 overrides 'recursive' => -1 when using 'contain' with hasMany associations,
+            // unintentionally fetching deeper related models not explicitly listed in 'contain'.
+            // TargetingClusterRelation is collected later on as a separate step.
+            $this->unbindModel(
+                ['hasMany' => ['TargetingClusterRelation']]
+            );
         }
         if (!empty($includeFullClusterRelationship)) {
             $params['contain']['GalaxyClusterRelation'][] = 'TargetCluster';
