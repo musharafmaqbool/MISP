@@ -98,6 +98,12 @@ class AttributesController extends AppController
         $conditions = $this->paginate['conditions'];
         $subqueryElements = $this->Attribute->Event->harvestSubqueryElements($filters);
         $filters = $this->Attribute->Event->addFiltersFromSubqueryElements($filters, $subqueryElements, $user);
+        $roleLimit = $this->User->getUserRestLimit($this->Auth->user(), $this);
+        if (!empty($filters['limit']) && ($filters['limit'] < $roleLimit || $roleLimit == 0)) {
+            $filters['limit'] = $filters['limit'];
+        } else {
+            $filters['limit'] = $roleLimit;
+        }
         $request_filters = $filters;
         $params = array_merge($filters, [
             'limit' => $this->paginate['limit'] ?? null,
