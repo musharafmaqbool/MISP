@@ -2681,6 +2681,7 @@ class Attribute extends AppModel
     {
         $attribute['event_id'] = $eventId;
         $attribute['object_id'] = $objectId ?: 0;
+        $attribute['object_relation'] = !empty($objectId) ? $attribute['object_relation'] : null;
         if (!isset($attribute['to_ids'])) {
             $attribute['to_ids'] = $this->typeDefinitions[$attribute['type']]['to_ids'];
         }
