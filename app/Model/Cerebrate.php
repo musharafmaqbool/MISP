@@ -52,7 +52,7 @@ class Cerebrate extends AppModel
                 return json_decode($response->body, true);
             }
         } catch (SocketException $e) {
-            throw new BadRequestException(__('Something went wrong. Error returned: %s', $e->getMessage));
+            throw new BadRequestException(__('Something went wrong. Error returned: %s', $e->getMessage()));
         }
         if ($response->code === 403 || $response->code === 401) {
             throw new ForbiddenException(__('Authentication failed.'));
