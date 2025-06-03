@@ -36,7 +36,7 @@ class Cerebrate extends AppModel
         $url = $options['cerebrate']['Cerebrate']['url'] . $options['path'];
         $url_params = [];
 
-        $HttpSocket = $this->setupHttpSocket($options['cerebrate']);
+        $HttpSocket = $this->setupHttpSocket($options['cerebrate'], null, false, 'Cerebrate');
         $request = $this->setupSyncRequest($options['cerebrate'], 'Cerebrate');
         try {
             if (!empty($options['type']) && $options['type'] === 'post') {
