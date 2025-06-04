@@ -1043,6 +1043,8 @@ class MispObject extends AppModel
                     }
                     $newAttribute['event_id'] = $object['Object']['event_id'];
                     $newAttribute['object_id'] = $object['Object']['id'];
+                    unset($newAttribute['id']);
+                    
                     // Set seen of object at attribute level
                     if (isset($forcedSeenOnElements['first_seen'])) {
                         $newAttribute['first_seen'] = empty($newAttribute['first_seen']) ? $forcedSeenOnElements['first_seen'] : $newAttribute['first_seen'];
@@ -1078,6 +1080,7 @@ class MispObject extends AppModel
             $newAttribute = $objectToSave['Attribute'][0];
             $newAttribute['event_id'] = $object['Object']['event_id'];
             $newAttribute['object_id'] = $object['Object']['id'];
+            unset($newAttribute['id']);
             // Set seen of object at attribute level
             if (
                 (!array_key_exists('first_seen', $newAttribute) || is_null($newAttribute['first_seen'])) &&
