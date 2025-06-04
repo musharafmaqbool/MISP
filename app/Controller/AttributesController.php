@@ -133,11 +133,7 @@ class AttributesController extends AppController
         }
         $this->set('params', $params);
         $conditions = $this->Attribute->buildFilterConditions($user, $filters, false);
-
-        if (isset($params['enforceWarninglist'])) {
-            $params['enforceWarninglist'] = 1;
-        }
-
+        $params = !empty($params['enforceWarninglist']) ? ['enforceWarninglist' => 1] : [];
         if (!empty($filters['direction'])) {
             $params['direction'] = $filters['direction'];
         }
@@ -161,6 +157,7 @@ class AttributesController extends AppController
                 $params['limit'] = $filters['limit'];
             }
             $attributes = $this->Attribute->fetchAttributes($user, $params);
+            debug($attributes);
         } else {
             $params['page'] = !empty($filters['page']) ? $filters['page'] : 1;
             $params['limit'] = !empty($filters['limit']) ? $filters['limit'] : 60;
