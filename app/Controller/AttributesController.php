@@ -50,7 +50,7 @@ class AttributesController extends AppController
         }
     }
 
-    public function massageSearchFilters(array $filters): array
+    private function __massageSearchFilters(array $filters): array
     {
         $multiLineFields = ['value', 'tags', 'org_id', 'sharing_group_id', 'uuid'];
         foreach ($multiLineFields as $field) {
@@ -61,7 +61,7 @@ class AttributesController extends AppController
         return $filters;
     }
 
-    public function cleanDefaultFormValues(array $filters): array
+    private function __cleanDefaultFormValues(array $filters): array
     {
         foreach ($filters as $key => $value) {
             if (in_array($key, ['type', 'category']) && $value === 'ALL') {
@@ -77,7 +77,7 @@ class AttributesController extends AppController
                 unset($filters[$key]);
             }
             if (is_array($value)) {
-                $filters[$key] = $this->cleanDefaultFormValues($value);
+                $filters[$key] = $this->__cleanDefaultFormValues($value);
             } elseif ($value === '') {
                 unset($filters[$key]);
             }
@@ -118,8 +118,8 @@ class AttributesController extends AppController
             }
         }
         if (!$this->_isRest()) {
-            $filters = $this->cleanDefaultFormValues($filters);
-            $filters = $this->massageSearchFilters($filters);
+            $filters = $this->__cleanDefaultFormValues($filters);
+            $filters = $this->__massageSearchFilters($filters);
         }
         $request_filters = $filters;
         $conditions = $this->paginate['conditions'];
