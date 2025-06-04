@@ -135,7 +135,7 @@ class AttributesController extends AppController
         }
         $this->set('params', $params);
         $conditions = $this->MispAttribute->buildFilterConditions($user, $filters, false);
-        if (isset($params['enforceWarninglist'])) {
+        if (!empty($params['enforceWarninglist'])) {
             $params['enforceWarninglist'] = 1;
         }
 
