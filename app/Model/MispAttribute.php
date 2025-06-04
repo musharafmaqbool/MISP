@@ -1796,7 +1796,7 @@ class MispAttribute extends AppModel
             'recursive' => -1,
             'contain' => array(
                 'Event' => array(
-                    'fields' => array('id', 'info', 'org_id', 'orgc_id', 'uuid'),
+                    'fields' => array('id', 'info', 'org_id', 'orgc_id', 'uuid', 'user_id'),
                 ),
                 'AttributeTag', // tags are fetched separately, @see MispAttribute::attachTagsToAttributes
                 'Object' => array(
