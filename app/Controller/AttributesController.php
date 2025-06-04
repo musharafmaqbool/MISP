@@ -48,6 +48,17 @@ class AttributesController extends AppController
         }
     }
 
+    public function massageSearchFilters(array $filters): array
+    {
+        $multiLineFields = ['value', 'tags', 'org_id', 'sharing_group_id', 'uuid'];
+        foreach ($multiLineFields as $field) {
+            if (isset($filters[$field]) && strstr($filters[$field], "\n")) {
+                $filters[$field] = explode("\n", rtrim($filters[$field], "\n"));
+            }
+        }
+        return $filters;
+    }
+
     public function cleanDefaultFormValues(array $filters): array
     {
         foreach ($filters as $key => $value) {
@@ -85,18 +96,29 @@ class AttributesController extends AppController
         }
         $params['conditions']['AND'][] = $this->Attribute->buildConditions($user);
         $paramArray = [
-            'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'limit', 'page', 'sort', 'direction'
+            'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'search_token', 'uuid', 'page', 'limit', 'sort', 'direction'
         ];
         $filterData = array(
             'request' => $this->request,
             'named_params' => $this->request->params['named'],
             'paramArray' => $paramArray,
-            'ordered_url_params' => func_get_args(),
-            'additional_delimiters' => PHP_EOL
+            'ordered_url_params' => func_get_args()
         );
         $exception = false;
         $filters = $this->_harvestParameters($filterData, $exception);
-        $filters = $this->cleanDefaultFormValues($filters);
+        if (!$this->_isRest()) {
+            if ($this->request->is('post') && empty($filters['search_token'])) {
+                $search_token = $this->Attribute->setSearchParamsByToken($this->request->data);
+                $this->set('search_token', $search_token);
+            } else if (!empty($filters['search_token'])) {
+                $filters = $this->Attribute->getSearchParamsByToken($filters);
+                $this->set('search_token', $filters['search_token']);
+            }
+        }
+        if (!$this->_isRest()) {
+            $filters = $this->cleanDefaultFormValues($filters);
+            $filters = $this->massageSearchFilters($filters);
+        }
         $request_filters = $filters;
         $conditions = $this->paginate['conditions'];
         $subqueryElements = $this->Attribute->Event->harvestSubqueryElements($filters);
@@ -193,7 +215,6 @@ class AttributesController extends AppController
 
         list($attributes, $sightingsData) = $this->__searchUI($attributes, $user);
         $exports = array_keys($this->Attribute->validFormats);
-        $this->set('paramArray', array_merge($paramArray, ['?']));
         $this->set('exports', $exports);
         $request_filters = array_diff_key($request_filters, array_flip(['direction', 'page', 'limit', 'sort']));
         $export_filters = '/';
@@ -208,6 +229,8 @@ class AttributesController extends AppController
                 }
             }
         }
+        $this->set('paramArray', $paramArray);
+        $this->set('passedArgsArray', $this->passedArgs);
         $this->set('export_filters', $export_filters);
         $this->set('sightingsData', $sightingsData);
         $this->set('orgTable', array_column($orgTable, 'name', 'id'));

@@ -1027,7 +1027,7 @@ class AppController extends Controller
 
     private function __captureParam($data, $param, $value)
     {
-        if ($this->modelClass->checkParam($param)) {
+        if ($this->{$this->modelClass}->checkParam($param)) {
             $data[$param] = $value;
         }
         return $data;
@@ -1069,10 +1069,7 @@ class AppController extends Controller
                     $temp = $request->data;
                 }
                 if (empty($options['paramArray'])) {
-                    foreach ($options['paramArray'] as $param => $value) {
-                        $data = $this->__captureParam($data, $param, $value);
-                    }
-                    $data = array_merge($data, $temp);
+                    $data = $temp;
                 } else {
                     foreach ($options['paramArray'] as $param) {
                         if (str_ends_with($param, '*')) {
