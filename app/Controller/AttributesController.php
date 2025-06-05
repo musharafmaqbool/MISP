@@ -159,7 +159,6 @@ class AttributesController extends AppController
                 $params['limit'] = $filters['limit'];
             }
             $attributes = $this->MispAttribute->fetchAttributes($user, $params);
-            debug($attributes);
         } else {
             $params['page'] = !empty($filters['page']) ? $filters['page'] : 1;
             $params['limit'] = !empty($filters['limit']) ? $filters['limit'] : 60;
