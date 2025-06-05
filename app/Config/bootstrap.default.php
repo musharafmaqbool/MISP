@@ -161,6 +161,12 @@ if (Configure::read('ShibbAuth')) {
 	CakePlugin::load('ShibbAuth');
 }
 
+if (empty(Configure::read('SimpleBackgroundJobs.enabled'))) {
+	CakePlugin::loadAll(array(
+		'CakeResque' => array('bootstrap' => true)
+	));
+}
+
 /**
  * You can attach event listeners to the request lifecyle as Dispatcher Filter . By Default CakePHP bundles two filters:
  *
