@@ -4485,6 +4485,7 @@ class AppModel extends Model
         foreach (array_chunk($toUpdate, 1000) as $chunk) {
             $this->GalaxyCluster->saveMany($chunk, $options);
         }
+        return true;
     }
     
     public function getSearchParamsByToken($filters)
