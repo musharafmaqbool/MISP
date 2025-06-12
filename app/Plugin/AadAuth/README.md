@@ -65,22 +65,6 @@ Password: f37827f21bfea08f4f11bb749b132772523b665f7a151c05ca3e3f0d65b299a2
 
 ![Login as misp](.images/Picture35.png)
 
-Next we need to edit the bootstrap.php file to add the AAD plugin.
-
-```BASH
-sudo nano /var/www/MISP/app/Config/bootstrap.php
-```
-
-Add the following under plugins
-
-```PHP
-CakePlugin::load('AadAuth');
-```
-
-![AadAuth](.images/Picture36.png)
-
-**Note:** This line does not exist in the bootstrap.php files and needs to be added.
-
 **Warning: Before continuing with the next step make a backup of the original `config.php` file**
 
 ```BASH
@@ -119,6 +103,7 @@ Scroll down to near the bottom of the page and add in the following configuratio
     'misp_orgadmin' => 'Misp Org Admins', // The AD group for MISP administrators
     'misp_siteadmin' => 'Misp Site Admins', // The AD group for MISP site administrators
     'check_ad_groups' => true, // Should we check if the user belongs to one of the above AD groups?
+    'auth_property_name' => 'userPrincipalName' // The name of the property to use for authentication. The value must be either 'mail' or 'userPrincipalName'
   ),
 ```
 
@@ -140,6 +125,15 @@ Additionally, it is recommended to set the following settings in the MISP config
 * `MISP.disable_user_password_change => true`: Removes the ability of users to change their own password.
 
 This way users will not be able to change their passwords and by-pass the AAD login flow.
+
+## Known problems
+### tls_process_server_certificate:certificate verify failed in CakeSocket.php
+
+If you encounter an error `error:1416F086:SSL routines:tls_process_server_certificate:certificate verify failed in [/var/www/MISP/app/Lib/cakephp/lib/Cake/Network/CakeSocket.php, line 504]` then this most likely means the plugin is unable to verify the remote server certificate, in this case the certificate from Microsoft. This can happen when you're behind a corporate proxy server with TLS inspection. The solution is to include the certificate of your proxy into the `/var/www/MISP/app/Lib/cakephp/lib/Cake/Config/cacert.pem` (or what you have defined as ca_path) file.
+
+```
+cat /etc/pki/ca-trust/corporate.pem >> /var/www/MISP/app/Lib/cakephp/lib/Cake/Config/cacert.pem
+```
 
 # Create users via the MISP REST API
 

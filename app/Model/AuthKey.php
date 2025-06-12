@@ -303,7 +303,7 @@ class AuthKey extends AppModel
     public function createnewkey($userId, $authKey = null, $comment = '', array $allowedIps = [])
     {
         if(empty($authKey)) {
-            $authKey = (new RandomTool())->random_str(true, 40);
+            $authKey = RandomTool::random_str(true, 40);
         }
         $newKey = [
             'authkey' => $authKey,
@@ -424,5 +424,60 @@ class AuthKey extends AppModel
     private function getHasher()
     {
         return new BlowfishConstantPasswordHasher();
+    }
+
+    public function canCreateAuthKeyForUser($currentUser, $user_id)
+    {
+        if (!empty($currentUser['Role']['perm_site_admin'])) {
+            return true;
+        }
+        if (!empty($currentUser['Role']['perm_admin'])) {
+            // org admin only for non-admin users and themselves
+            $user = $this->User->find('first', [
+                'recursive' => -1,
+                'conditions' => [
+                    'User.id' => $user_id,
+                    'User.disabled' => false,
+                    'User.org_id' => $currentUser['org_id']
+                ],
+                'fields' => ['User.id', 'User.org_id', 'User.disabled'],
+                'contain' => [
+                    'Role' => [
+                        'fields' => [
+                            'Role.perm_site_admin', 'Role.perm_admin', 'Role.perm_auth'
+                        ]
+                    ]
+                ]
+            ]);
+            // Make sure that we can't create keys for disabled users
+            if (empty($user)) {
+                return false;
+            }
+            if ($user['Role']['perm_site_admin'] || 
+                ($user['Role']['perm_admin'] && $user['User']['id'] !== $currentUser['id']) ||
+                !$user['Role']['perm_auth']) {
+                // no create/edit for site_admin or other org admin
+                return false;
+            } else {
+                // ok for themselves or users
+                return true;
+            }
+        } else {
+            // user for themselves
+            return (int)$user_id === (int)$currentUser['id'];
+        }
+    }
+
+    public function canEditAuthKey($currentUser, $key_id)
+    {
+        $user_id = $this->find('column', [
+            'fields' => ['AuthKey.user_id'],
+            'conditions' => [
+                'AuthKey.id' => $key_id
+            ]]);
+        if (!empty($user_id)) {
+            $user_id = $user_id[0];
+        }
+        return $this->canCreateAuthKeyForUser($currentUser, $user_id);
     }
 }

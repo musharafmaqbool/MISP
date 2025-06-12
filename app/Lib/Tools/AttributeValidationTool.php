@@ -30,6 +30,31 @@ class AttributeValidationTool
         'dom-hash' => 32,
     ];
 
+    const VULNERABILITY_REGEXES = [
+        'CVE-\d{4}-\d{4,}',
+        'GCVE-\d+-\d{4}-\d+',
+        'fkie_cve-\d{4}-\d{4,}',
+        'ghsa-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}-[a-zA-Z0-9]{4}',
+        'pysec-\d{4}-\d{2,5}',
+        'gsd-\d{4}-\d{4,5}',
+        'mal-\d{4}-\d+',
+        'wid-sec-w-\d{4}-\d{4}',
+        'ncsc-\d{4}-\d{4}',
+        'ssa-\d{6}',
+        'rh(ba|ea|sa)-\d{4}:\d{4,}',
+        'ics(ma|a)-\d{2}-\d{3}-\d{2}',
+        'va-\d{2}-\d{3}-\d{2}',
+        'cisco-sa(-[a-zA-Z0-9_]+)+',
+        'sca-\d{4}-\d{4,}',
+        'nn-\d{4}[:_]\d-\d{2}',
+        'oxas-adv-\d{4}-\d{4}',
+        'msrc_cve-\d{4}-\d{4,}',
+        'var-\d{6}-\d{4}',
+        'jvndb-\d{4}-\d{6}',
+        'ts-\d{4}-\d{4}',
+        '(open)?suse-su-\d{4}:\d{4,}-\d'
+    ];
+
     /**
      * Do some last second modifications before the validation
      * @param string $type
@@ -74,6 +99,7 @@ class AttributeValidationTool
             case 'target-email':
             case 'whois-registrant-email':
             case 'dom-hash':
+            case 'onion-address':
                 return strtolower($value);
             case 'domain':
                 $value = strtolower($value);
@@ -126,6 +152,12 @@ class AttributeValidationTool
             case 'hex':
                 return strtoupper($value);
             case 'vulnerability':
+                $value = str_replace('–', '-', $value);
+                $source = explode('-', $value)[0];
+                if (in_array($source, ['cve', 'gcve'])) {
+                    return strtoupper($value);
+                }
+                return $value;
             case 'weakness':
                 $value = str_replace('–', '-', $value);
                 return strtoupper($value);
@@ -139,7 +171,7 @@ class AttributeValidationTool
             case 'prtn':
             case 'whois-registrant-phone':
             case 'phone-number':
-                if (substr($value, 0, 2) == '00') {
+                if (str_starts_with($value, '00')) {
                     $value = '+' . substr($value, 2);
                 }
                 $value = preg_replace('/\(0\)/', '', $value);
@@ -152,27 +184,27 @@ class AttributeValidationTool
             case 'ip-dst|port':
             case 'ip-src|port':
                 if (substr_count($value, ':') >= 2) { // (ipv6|port) - tokenize ip and port
-                    if (strpos($value, '|')) { // 2001:db8::1|80
+                    if (str_contains($value, '|')) { // 2001:db8::1|80
                         $parts = explode('|', $value);
                     } elseif (str_starts_with($value, '[') && str_contains($value, ']')) { // [2001:db8::1]:80
                         $ipv6 = substr($value, 1, strpos($value, ']')-1);
                         $port = explode(':', substr($value, strpos($value, ']')))[1];
                         $parts = array($ipv6, $port);
-                    } elseif (strpos($value, '.')) { // 2001:db8::1.80
+                    } elseif (str_contains($value, '.')) { // 2001:db8::1.80
                         $parts = explode('.', $value);
-                    } elseif (strpos($value, ' port ')) { // 2001:db8::1 port 80
+                    } elseif (str_contains($value, ' port ')) { // 2001:db8::1 port 80
                         $parts = explode(' port ', $value);
-                    } elseif (strpos($value, 'p')) { // 2001:db8::1p80
+                    } elseif (str_contains($value, 'p')) { // 2001:db8::1p80
                         $parts = explode('p', $value);
-                    } elseif (strpos($value, '#')) { // 2001:db8::1#80
+                    } elseif (str_contains($value, '#')) { // 2001:db8::1#80
                         $parts = explode('#', $value);
                     } else { // 2001:db8::1:80 this one is ambiguous
                         $temp = explode(':', $value);
                         $parts = array(implode(':', array_slice($temp, 0, count($temp)-1)), end($temp));
                     }
-                } elseif (strpos($value, ':')) { // (ipv4:port)
+                } elseif (str_contains($value, ':')) { // (ipv4:port)
                     $parts = explode(':', $value);
-                } elseif (strpos($value, '|')) { // (ipv4|port)
+                } elseif (str_contains($value, '|')) { // (ipv4|port)
                     $parts = explode('|', $value);
                 } else {
                     return $value;
@@ -377,6 +409,11 @@ class AttributeValidationTool
                     return __('Port numbers have to be integers between 1 and 65535.');
                 }
                 return true;
+            case 'onion-address':
+                if (preg_match('#^([a-z2-7]{16}|[a-z2-7]{56})\.onion$#', $value)) {
+                    return true;
+                }
+                return __('Onion address has an invalid format.');
             case 'mac-address':
                 return preg_match('/^([a-fA-F0-9]{2}[:]?){6}$/', $value) === 1;
             case 'mac-eui-64':
@@ -419,10 +456,10 @@ class AttributeValidationTool
                 }
                 return __('Email address has an invalid format. Please double check the value or select type "other".');
             case 'vulnerability':
-                if (preg_match("#^CVE-[0-9]{4}-[0-9]{4,}$#", $value)) {
+                if (preg_match("#^(" . implode("|", self::VULNERABILITY_REGEXES) . ")$#i", $value)) {
                     return true;
                 }
-                return __('Invalid format. Expected: CVE-xxxx-xxxx...');
+                return __('Invalid vulnerability ID format.');
             case 'weakness':
                 if (preg_match("#^CWE-[0-9]+$#", $value)) {
                     return true;
@@ -561,8 +598,10 @@ class AttributeValidationTool
                   }
                 return true;*/
             case 'integer':
-                if (is_int($value)) {
-                    return true;
+                if (is_numeric($value)) {
+                    if (filter_var($value, FILTER_VALIDATE_INT)) {
+                        return true;
+                    }
                 }
                 return __('The value has to be an integer value.');
             case 'iban':
@@ -711,16 +750,16 @@ class AttributeValidationTool
     private static function normalizeIp($value)
     {
         // If IP is a CIDR
-        if (strpos($value, '/')) {
+        if (str_contains($value, '/')) {
             list($ip, $range) = explode('/', $value, 2);
 
             // Compress IPv6
-            if (strpos($ip, ':') && $converted = inet_pton($ip)) {
+            if (str_contains($ip, ':') && $converted = inet_pton($ip)) {
                 $ip = inet_ntop($converted);
             }
 
             // If IP is in CIDR format, but the network is 32 for IPv4 or 128 for IPv6, normalize to non CIDR type
-            if (($range === '32' && strpos($value, '.')) || ($range === '128' && strpos($value, ':'))) {
+            if (($range === '32' && str_contains($value, '.')) || ($range === '128' && str_contains($value, ':'))) {
                 return $ip;
             }
 
@@ -728,7 +767,7 @@ class AttributeValidationTool
         }
 
         // Compress IPv6
-        if (strpos($value, ':') && $converted = inet_pton($value)) {
+        if (str_contains($value, ':') && $converted = inet_pton($value)) {
             return inet_ntop($converted);
         }
 

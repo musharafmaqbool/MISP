@@ -92,7 +92,8 @@ class AppModel extends Model
         111 => false, 112 => false, 113 => true, 114 => false, 115 => false, 116 => false,
         117 => false, 118 => false, 119 => false, 120 => false, 121 => false, 122 => false,
         123 => false, 124 => false, 125 => false, 126 => false, 127 => false, 128 => false,
-        129 => false, 130 => false
+        129 => false, 130 => false, 131 => false, 132 => false, 133 => false, 134 => true,
+        135 => false, 136 => true, 137 => false, 138 => false, 139 => false,
     );
 
     const ADVANCED_UPDATES_DESCRIPTION = array(
@@ -280,6 +281,9 @@ class AppModel extends Model
                 break;
             case 120:
                 $dbUpdateSuccess = $this->moveImages();
+                break;
+            case 139:
+                $dbUpdateSuccess = $this->fixUpdatedGalaxyID();
                 break;
             default:
                 $dbUpdateSuccess = $this->updateDatabase($command);
@@ -2220,6 +2224,75 @@ class AppModel extends Model
                 // change bookmarks' table's comment field to utf8_mb4
                 $sqlArray[] = "ALTER TABLE `bookmarks` MODIFY `comment` TEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;";
                 break;
+            case 131:
+                $sqlArray[] = "ALTER TABLE `galaxies` ADD `default` tinyint(1) NOT NULL DEFAULT 0;";
+                $sqlArray[] = "ALTER TABLE `galaxies` ADD `org_id` int(10) unsigned NOT NULL";
+                $sqlArray[] = "ALTER TABLE `galaxies` ADD `orgc_id` int(10) unsigned NOT NULL";
+                $sqlArray[] = "ALTER TABLE `galaxies` ADD `created` datetime NOT NULL";
+                $sqlArray[] = "ALTER TABLE `galaxies` ADD `modified` datetime NOT NULL";
+                $sqlArray[] = "ALTER TABLE `galaxies` ADD `distribution` tinyint(4) NOT NULL";
+                $sqlArray[] = 'UPDATE `galaxies` SET `distribution` = 3;';
+                $sqlArray[] = "UPDATE galaxies g
+                    SET g.default = (
+                        CASE
+                            -- Set to 0 if all related galaxy_clusters have default set to 0
+                            WHEN (
+                                SELECT MAX(gc.default)
+                                FROM galaxy_clusters gc
+                                WHERE gc.galaxy_id = g.id
+                            ) = 0 THEN 0
+                            -- Otherwise, set to 1 if any related cluster has default <> 0
+                            ELSE 1
+                        END
+                    );
+                ";
+
+                $this->__addIndex('galaxies', 'default');
+                $this->__addIndex('galaxies', 'org_id');
+                $this->__addIndex('galaxies', 'orgc_id');
+                $this->__addIndex('galaxies', 'user_id');
+                $this->__addIndex('galaxies', 'created');
+                $this->__addIndex('galaxies', 'modified');
+                $this->__addIndex('galaxies', 'distribution');
+                break;
+            case 132:
+                $sqlArray[] = "CREATE TABLE IF NOT EXISTS `event_report_tags` (
+                    `id` int(11) NOT NULL AUTO_INCREMENT,
+                    `event_report_id` int(11) NOT NULL,
+                    `tag_id` int(11) NOT NULL,
+                    `local` tinyint(1) NOT NULL DEFAULT 0,
+                    `relationship_type` varchar(191) NULL DEFAULT '',
+                    PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+                $indexArray[] = array('event_report_tags', 'event_report_id');
+                $indexArray[] = array('event_report_tags', 'tag_id');
+                break;
+            case 133:
+                $sqlArray[] = "CREATE TABLE IF NOT EXISTS `event_report_template_variables` (
+                    `id` int(11) NOT NULL AUTO_INCREMENT,
+                    `name` varchar(191) NOT NULL,
+                    `value` text,
+                    PRIMARY KEY (`id`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
+                $indexArray[] = array('event_report_template_variables', 'name');
+                break;
+            case 134:
+                $sqlArray[] = "ALTER TABLE `roles` ADD `perm_server_sign` tinyint(1) NOT NULL DEFAULT 0;";
+                $sqlArray[] = "UPDATE `roles` SET `perm_server_sign`=1 WHERE `perm_site_admin` = 1;";
+                break;
+            case 135:
+                $sqlArray[] = "ALTER TABLE `taxii_servers` ADD `skip_proxy` tinyint(1) NOT NULL DEFAULT 0;";
+                break;
+            case 136:
+                $sqlArray[] = "ALTER TABLE `roles` ADD `perm_sync_internal` tinyint(1) NOT NULL DEFAULT 0;";
+                $sqlArray[] = "ALTER TABLE `roles` ADD `perm_sync_authoritative` tinyint(1) NOT NULL DEFAULT 0;";
+                break;
+            case 137:
+                $sqlArray[] = "ALTER TABLE `object_relationships` ADD `highlighted` tinyint(1) DEFAULT 0;";
+                break;
+            case 138:
+                $sqlArray[] = "ALTER TABLE `events` MODIFY info text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
+                break;
             case 'fixNonEmptySharingGroupID':
                 $sqlArray[] = 'UPDATE `events` SET `sharing_group_id` = 0 WHERE `distribution` != 4;';
                 $sqlArray[] = 'UPDATE `attributes` SET `sharing_group_id` = 0 WHERE `distribution` != 4;';
@@ -3541,7 +3614,7 @@ class AppModel extends Model
                     continue;
                 }
                 // split the filter params into two lists, one for substring searches one for exact ones
-                if (is_string($f) && ($f[strlen($f) - 1] === '%' || $f[0] === '%')) {
+                if (is_string($f) && (str_ends_with($f, '%') || str_starts_with($f, '%'))) {
                     foreach ($keys as $key) {
                         if ($this->checkParam($key)) {
                             if ($operator === 'NOT') {
@@ -3729,7 +3802,7 @@ class AppModel extends Model
 
     public function generateRandomFileName()
     {
-        return (new RandomTool())->random_str(false, 12);
+        return RandomTool::random_str(false, 12);
     }
 
     /**
@@ -4334,7 +4407,7 @@ class AppModel extends Model
         return false;
     }
 
-    private function checkParam($param)
+    protected function checkParam($param)
     {
         return preg_match('/^[\w\_\-\. ]+$/', $param);
     }
@@ -4362,6 +4435,89 @@ class AppModel extends Model
         ]);
         if ($result) {
             $oldCustomDir->delete();
+        }
+        return true;
+    }
+
+    public function getSearchParamsByToken($filters)
+    {
+        $token = $filters['search_token'];
+        $redis = $this->setupRedis();
+        if (!$redis) {
+            throw new Exception('Could not connect to Redis server');
+        }
+        $path = 'misp:search_tokens:' . $token;
+        $params = $redis->get($path);
+        $params = json_decode($params, true);
+        $params['search_token'] = $token;
+        $toUnset = ['page', 'limit', 'sort', 'direction'];
+        foreach ($toUnset as $unset) {
+            if (isset($params[$unset])) {
+                unset($params[$unset]);
+            }
+        }
+        return array_merge($filters, $params);
+    }
+
+    public function setSearchParamsByToken($params)
+    {
+        $redis = $this->setupRedis();
+        if (!$redis) {
+            throw new Exception('Could not connect to Redis server');
+        }
+        $token = bin2hex(Security::randomBytes(32));
+        $path = 'misp:search_tokens:' . $token;
+        $params = json_encode($params);
+        $redis->set($path, $params);
+        $redis->expire($path, 3600);
+        return $token;
+    }
+    
+    public function fixUpdatedGalaxyID()
+    {
+        $this->GalaxyCluster = ClassRegistry::init('GalaxyCluster');
+        $this->AuditLog = ClassRegistry::init('AuditLog');
+        $allUpdatedClusters = $this->AuditLog->find('all', [
+            'conditions' => [
+                'model' => 'GalaxyCluster',
+                'user_id !=' => 0, // Ignore clusters from misp-galaxy
+                'action' => ['edit',],
+            ],
+            'recursive' => -1,
+        ]);
+        $clusterIDsThatGotTheirGalaxyIDChanged = [];
+        foreach ($allUpdatedClusters as $cluster) {
+            if (!empty($cluster['AuditLog']['change']['galaxy_id'])) {
+                $oldID = $cluster['AuditLog']['change']['galaxy_id'][0];
+                $newID = $cluster['AuditLog']['change']['galaxy_id'][1];
+                $clusterIDsThatGotTheirGalaxyIDChanged[$cluster['AuditLog']['model_id']] = [$oldID, $newID];
+            }
+        }
+        $clustersThatGotTheirGalaxyIDChanged = $this->GalaxyCluster->find('all', [
+            'conditions' => [
+                'id' => array_keys($clusterIDsThatGotTheirGalaxyIDChanged),
+            ],
+            'recursive' => -1,
+        ]);
+        $toUpdate = [];
+        foreach ($clustersThatGotTheirGalaxyIDChanged as $cluster) {
+            $oldID = $clusterIDsThatGotTheirGalaxyIDChanged[$cluster['GalaxyCluster']['id']][0];
+            $newID = $clusterIDsThatGotTheirGalaxyIDChanged[$cluster['GalaxyCluster']['id']][1];
+            if ($oldID !== $newID) {
+                $toUpdate[] = [
+                    'id' => $cluster['GalaxyCluster']['id'],
+                    'galaxy_id' => $oldID,
+                ];
+                $this->GalaxyCluster->saveMany($toUpdate);
+            }
+        }
+
+        $options = [
+            'validate' => false,
+            'callbacks' => false,
+        ];
+        foreach (array_chunk($toUpdate, 1000) as $chunk) {
+            $this->GalaxyCluster->saveMany($chunk, $options);
         }
         return true;
     }

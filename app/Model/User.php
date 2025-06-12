@@ -198,7 +198,7 @@ class User extends AppModel
             'className' => 'Server',
             'foreignKey' => 'server_id',
             'conditions' => '',
-            'fields' => array('Server.id', 'Server.url', 'Server.push_rules'),
+            'fields' => array('Server.id', 'Server.name', 'Server.url', 'Server.push_rules'),
             'order' => ''
         )
     );
@@ -2156,7 +2156,7 @@ class User extends AppModel
         if (empty($user)) {
             return false;
         }
-        $token = RandomTool::random_str(true, 40, '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ');
+        $token = RandomTool::random_str(true, 40);
         RedisTool::init()->set('misp:forgot:' . $token, $user['User']['id'], ['nx', 'ex' => 600]);
         $baseurl = Configure::check('MISP.external_baseurl') ? Configure::read('MISP.external_baseurl') : Configure::read('MISP.baseurl');
         $body = __(
@@ -2263,5 +2263,99 @@ class User extends AppModel
         }
 
         return null;
+    }
+
+    public function createNotificationToast(array $user, $toastHeader, $toastBody, $variant = 'info'): bool
+    {
+        if ($user['User']['disabled'] || !$this->checkIfUserIsValid($user['User'])) {
+            return false;
+        }
+        $redis = $this->setupRedis();
+        if ($redis !== false) {
+            $pipe = $redis->pipeline();
+            $redisNotificationKey = 'misp:user_toast_notification:' . $user['User']['id'];
+            $expiration = 86400; # 1 day
+            $flashMessage = [
+                'message' => $toastHeader,
+                'element' => 'parametrized_flash',
+                'params' => [
+                    'toast_header' => $toastHeader,
+                    'toast_body' => $toastBody,
+                    'variant' => $variant,
+                ],
+            ];
+            $pipe->sadd($redisNotificationKey, RedisTool::serialize($flashMessage));
+            $pipe->expire($redisNotificationKey, $expiration);
+            $pipe->exec();
+            return true;
+        }
+        return false;
+    }
+
+    public function collectNotificationToastForUser(array $user): array
+    {
+        if (!is_null($user['User'])) {
+            $redis = $this->setupRedis();
+            if ($redis !== false) {
+                $redisNotificationKey = 'misp:user_toast_notification:' . $user['User']['id'];
+                $flashMessages = $redis->smembers($redisNotificationKey);
+                $redis->del($redisNotificationKey);
+                $flashMessages = array_map('RedisTool::deserialize', $flashMessages);
+                return $flashMessages;
+            }
+        }
+        return []; 
+    }
+
+    public function userIP($user)
+    {
+        $Server = ClassRegistry::init('Server');
+        $redis = $Server->setupRedis();
+        if (is_numeric($user)) {
+            $conditions = ['User.id' => $user];
+        } else {
+            $conditions = ['User.email' => $user];
+        }
+        $user = $this->find('first', array(
+            'recursive' => -1,
+            'contain' => ['Organisation', 'Role'],
+            'fields' => ['User.email', 'User.disabled', 'Organisation.*', 'Role.*', 'User.id'],
+            'conditions' => $conditions
+        ));
+        if (empty($user)) {
+            throw new NotFoundException(__('User not found.'));
+        }
+        $temp = ['Organisation' => $user['Organisation'], 'Role' => $user['Role']];
+        unset($user['Organisation']);
+        unset($user['Role']);
+        $user = $user['User'];
+        $user = array_merge($user, $temp);
+        $ips = $redis->smembers('misp:user_ip:' . $user['id']);
+        return ['ips' => $ips, 'User' => $user];
+    }
+
+    public function IPUser($ip)
+    {
+        $Server = ClassRegistry::init('Server');
+        $redis = $Server->setupRedis();
+        $user_id = $redis->get('misp:ip_user:' . $ip);
+        if (empty($user_id)) {
+            throw new NotFoundException(__('No Users found for the given IP.'));
+        }
+        $user = $this->find('first', array(
+            'recursive' => -1,
+            'contain' => ['Organisation', 'Role'],
+            'fields' => ['User.email', 'User.disabled', 'Organisation.*', 'Role.*', 'User.id'],
+            'conditions' => array('User.id' => $user_id)
+        ));
+        if (empty($user)) {
+            throw new NotFoundException(__('User not found.'));
+        }
+        $temp = ['Organisation' => $user['Organisation'], 'Role' => $user['Role']];
+        unset($user['Organisation']);
+        unset($user['Role']);
+        $user = $user['User'];
+        $user = array_merge($user, $temp);
+        return ['ip' => $ip, 'User' => $user];
     }
 }

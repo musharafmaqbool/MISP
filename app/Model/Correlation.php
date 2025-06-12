@@ -462,14 +462,6 @@ class Correlation extends AppModel
                 continue; // skip already blocked values when doing full correlation
             }
             $conditions = [
-                'OR' => [
-                    'Attribute.value1' => $cV,
-                    'AND' => [
-                        'Attribute.value2' => $cV,
-                        'NOT' => ['Attribute.type' => MispAttribute::PRIMARY_ONLY_CORRELATING_TYPES]
-                    ],
-                    $extraConditions,
-                ],
                 'NOT' => [
                     'Attribute.event_id' => $a['Attribute']['event_id'],
                     'Attribute.type' => MispAttribute::NON_CORRELATING_TYPES,
@@ -485,9 +477,17 @@ class Correlation extends AppModel
             $correlationLimit = $this->OverCorrelatingValue->getLimit();
 
             $conditions = $this->CorrelationRule->attachCustomCorrelationRules($a, $conditions);
+            $conditions1 = $conditions2 = $conditions;
 
-            $correlatingAttributes = $this->Attribute->find('all', [
-                'conditions' => $conditions,
+            $conditions1['Attribute.value1'] = $cV;
+            $conditions2[] = [
+                'AND' => [
+                    'Attribute.value2' => $cV,
+                    'NOT' => ['Attribute.type' => MispAttribute::PRIMARY_ONLY_CORRELATING_TYPES]
+                ]
+            ];
+            $correlatingAttributes1 = $this->Attribute->find('all', [
+                'conditions' => $conditions1,
                 'recursive' => -1,
                 'fields' => $this->getFieldRules(),
                 'contain' => $this->getContainRules(),
@@ -497,14 +497,43 @@ class Correlation extends AppModel
                 'limit' => empty($correlationLimit) ? null : ($correlationLimit+1)
             ]);
 
+            $correlatingAttributes2 = $this->Attribute->find('all', [
+                'conditions' => $conditions2,
+                'recursive' => -1,
+                'fields' => $this->getFieldRules(),
+                'contain' => $this->getContainRules(),
+                'order' => [],
+                'callbacks' => 'before', // memory leak fix
+                // let's fetch the limit +1 - still allows us to detect overcorrelations, but we'll also never need more
+                'limit' => empty($correlationLimit) ? null : ($correlationLimit+1)
+            ]);
+            if (!empty($extraConditions)) {
+                $correlatingAttributes3 = $this->Attribute->find('all', [
+                    'conditions' => $extraConditions,
+                    'recursive' => -1,
+                    'fields' => $this->getFieldRules(),
+                    'contain' => $this->getContainRules(),
+                    'order' => [],
+                    'callbacks' => 'before', // memory leak fix
+                    // let's fetch the limit +1 - still allows us to detect overcorrelations, but we'll also never need more
+                    'limit' => empty($correlationLimit) ? null : ($correlationLimit+1)
+                ]);
+                $correlatingAttributes = array_merge($correlatingAttributes1, $correlatingAttributes2, $correlatingAttributes3);
+                unset($correlatingAttributes1, $correlatingAttributes2, $correlatingAttributes3);
+            } else {
+                $correlatingAttributes = array_merge($correlatingAttributes1, $correlatingAttributes2);
+                unset($correlatingAttributes1, $correlatingAttributes2);
+            }
+
             // Let's check if we don't have a case of an over-correlating attribute
             $count = count($correlatingAttributes);
             if ($count > $correlationLimit) {
                 // If we have more correlations for the value than the limit, set the block entry and stop the correlation process
                 $this->OverCorrelatingValue->block($cV);
                 return true;
-            } else if ($count !== 0 && !$full) {
+            } else if ($count !== 0 && !$full && !isset($a['Attribute']['skip_overcorrelation_unblock'])) {
                 // If we have fewer hits than the limit, proceed with the correlation, but first make sure we remove any existing blockers
+                // Added the skip_correlation flag as a reason to skip over this, we're receiving an event that in itself contains more than the limit in correlations. Let's not unblock any values in this case.
                 $this->OverCorrelatingValue->unblock($cV);
             }
             foreach ($correlatingAttributes as $b) {
