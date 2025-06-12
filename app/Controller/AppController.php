@@ -1449,9 +1449,7 @@ class AppController extends Controller
         }
 
         $roleLimit = $this->User->getUserRestLimit($this->Auth->user(), $this);
-        if (!empty($filters['limit']) && ($filters['limit'] < $roleLimit || $roleLimit == 0)) {
-            $filters['limit'] = $filters['limit'];
-        } else {
+        if (empty($filters['limit']) || ($roleLimit != 0 && $filters['limit'] >= $roleLimit)) {
             $filters['limit'] = $roleLimit;
         }
 
