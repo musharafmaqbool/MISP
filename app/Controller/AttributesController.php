@@ -98,7 +98,7 @@ class AttributesController extends AppController
         }
         $params['conditions']['AND'][] = $this->MispAttribute->buildConditions($user);
         $paramArray = [
-            'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'search_token', 'uuid', 'page', 'limit', 'sort', 'direction'
+            'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'search_token', 'uuid', 'page', 'limit', 'sort', 'direction', 'object_relation'
         ];
         $filterData = array(
             'request' => $this->request,
