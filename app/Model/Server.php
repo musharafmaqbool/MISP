@@ -6709,6 +6709,7 @@ class Server extends AppModel
                     'value' => '/var/www/MISP/.smime/email@address.com.pem',
                     'test' => 'testForEmpty',
                     'type' => 'string',
+                    'cli_only' => 1,
                 ),
                 'key_sign' => array(
                     'level' => 2,
@@ -6716,6 +6717,7 @@ class Server extends AppModel
                     'value' => '/var/www/MISP/.smime/email@address.com.key',
                     'test' => 'testForEmpty',
                     'type' => 'string',
+                    'cli_only' => 1,
                 ),
                 'password' => array(
                     'level' => 2,
