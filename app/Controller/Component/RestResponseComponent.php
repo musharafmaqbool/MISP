@@ -1397,7 +1397,7 @@ class RestResponseComponent extends Component
                 'type' => 'integer',
                 'operators' => array('equal'),
                 'validation' => array('min' => 0, 'step' => 1),
-                'help' => __('Limit on the pagination')
+                'help' => __('Limit on the pagination. Lower bounded by the one set by the admin')
             ),
             'local' => array(
                 'input' => 'radio',

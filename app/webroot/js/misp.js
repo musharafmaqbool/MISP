@@ -5516,6 +5516,15 @@ function checkRoleEnforceRateLimit() {
     }
 }
 
+function toggleIsRestsearchLimitedField() {
+    if ($('#RoleIsRestsearchLimited').is(':checked')) {
+        $('#restsearchLimitValueContainer').show();
+    } else {
+        $('#restsearchLimitValueContainer').hide();
+    }
+}
+
+
 function queryDeprecatedEndpointUsage() {
     $.ajax({
         url: baseurl + '/api/viewDeprecatedFunctionUse',
