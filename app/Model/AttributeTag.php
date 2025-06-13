@@ -286,37 +286,40 @@ class AttributeTag extends AppModel
             return [];
         }
 
-        // First get attribute IDs directly tagged
-        $directAttributeIds = $this->Attribute->AttributeTag->find('list', [
-            'fields' => ['AttributeTag.attribute_id'],
-            'conditions' => ['AttributeTag.tag_id' => $tagIds],
-            'recursive' => -1
-        ]);
+        foreach ($tagIds as $tagId) {
+            // First get attribute IDs directly tagged
+            $directAttributeIds = $this->Attribute->AttributeTag->find('list', [
+                'fields' => ['AttributeTag.attribute_id'],
+                'conditions' => ['AttributeTag.tag_id' => $tagIds],
+                'recursive' => -1
+            ]);
 
-        // Then get attribute IDs from tagged events in one query with join
-        $eventAttributeIds = $this->Attribute->find('list', [
-            'fields' => ['Attribute.id'],
-            'joins' => [
-                [
-                    'table' => 'event_tags',
-                    'alias' => 'EventTag',
-                    'type' => 'INNER',
-                    'conditions' => [
-                        'EventTag.event_id = Attribute.event_id',
-                        'EventTag.tag_id' => $tagIds
+            // Then get attribute IDs from tagged events in one query with join
+            $eventAttributeIds = $this->Attribute->find('list', [
+                'fields' => ['Attribute.id'],
+                'joins' => [
+                    [
+                        'table' => 'event_tags',
+                        'alias' => 'EventTag',
+                        'type' => 'INNER',
+                        'conditions' => [
+                            'EventTag.event_id = Attribute.event_id',
+                            'EventTag.tag_id' => $tagIds
+                        ]
                     ]
-                ]
-            ],
-            'recursive' => -1
-        ]);
+                ],
+                'recursive' => -1
+            ]);
 
-        // Merge and count unique attributes
-        $allAttributeIds = array_unique(array_merge(
-            array_values($directAttributeIds),
-            array_values($eventAttributeIds)
-        ));
+            // Merge and count unique attributes
+            $allAttributeIds = array_unique(array_merge(
+                array_values($directAttributeIds),
+                array_values($eventAttributeIds)
+            ));
 
-        return [$tagIds[0] => count($allAttributeIds)];
+            $countAllTags[$tagId] = count($allAttributeIds);
+        }
+        return $countAllTags;
     }
 
 
