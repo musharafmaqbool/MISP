@@ -240,17 +240,6 @@ class AttributeTag extends AppModel
         }
     }
 
-      /**
-     * @param int $tagId
-     * @param array $user
-     * @return int
-     */
-    public function countForTag($tagId, array $user)
-    {
-        $count = $this->countForTags([$tagId], $user);
-        return isset($count[$tagId]) ? (int)$count[$tagId] : 0;
-    }
-
     /**
      * @param array $tagIds
      * @param array $user - Currently ignored for performance reasons
@@ -261,37 +250,69 @@ class AttributeTag extends AppModel
         if (empty($tagIds)) {
             return [];
         }
-        // First, we fetch the attribute that are associated with the tags
-        $attributeIdsFromTags = $this->Attribute->AttributeTag->find('list', [
-            'fields' => ['AttributeTag.attribute_id'],
+        $this->virtualFields['attribute_count'] = 'COUNT(AttributeTag.id)';
+        $counts = $this->find('list', [
+            'recursive' => -1,
+            'fields' => ['AttributeTag.tag_id', 'attribute_count'],
             'conditions' => ['AttributeTag.tag_id' => $tagIds],
-            'recursive' => -1
+            'group' => ['AttributeTag.tag_id'],
         ]);
-
-        // Then, we fetch the events that are associated with the tags
-        $eventIdsFromTags = $this->Attribute->Event->EventTag->find('list', [
-            'fields' => ['EventTag.event_id'],
-            'conditions' => [
-                'EventTag.tag_id' => $tagIds
-            ],
-            'recursive' => -1
-        ]);
-
-        // Finally, we fetch the attributes that are associated with the events
-        $attributeIdsFromEvents = [];
-        if (!empty($eventIdsFromTags)) {
-            $attributeIdsFromEvents = $this->Attribute->find('list', [
-                'fields' => ['Attribute.id'],
-                'conditions' => [
-                    'Attribute.event_id' => $eventIdsFromTags,
-                ],
-                'recursive' => -1
-            ]);
-        }
-        // Now we can merge the two lists of attribute to get both attributes from tags and attributes from events with the same tag
-        $attributeIds = array_unique(array_merge(array_values($attributeIdsFromTags), array_values($attributeIdsFromEvents)));
-        return [$tagIds[0] => count($attributeIds)];
+        unset($this->virtualFields['attribute_count']);
+        return $counts;
     }
+
+
+     /**
+     * @param int $tagId
+     * @param array $user
+     * @return int
+     */
+    public function countForTag($tagId, array $user)
+    {
+        $count = $this->countForAllTags([$tagId], $user);
+        return isset($count[$tagId]) ? (int)$count[$tagId] : 0;
+    }
+
+
+
+    /**
+     * @param array $tagIds
+     * @param array $user - Currently ignored for performance reasons
+     * @return array
+     */
+    public function countForAllTags(array $tagIds, array $user)
+    {
+        if (empty($tagIds)) {
+            return [];
+        }
+
+        // Single query using UNION to get all attribute IDs from both sources:
+        // 1. Attributes directly tagged with the specified tags
+        // 2. Attributes from events that are tagged with the specified tags
+        $sql = "
+            SELECT DISTINCT attribute_id
+            FROM (
+                SELECT AttributeTag.attribute_id
+                FROM attribute_tags AS AttributeTag
+                WHERE AttributeTag.tag_id IN (" . implode(',', array_map('intval', $tagIds)) . ")
+
+                UNION
+
+                SELECT Attribute.id AS attribute_id
+                FROM attributes AS Attribute
+                INNER JOIN event_tags AS EventTag ON Attribute.event_id = EventTag.event_id
+                WHERE EventTag.tag_id IN (" . implode(',', array_map('intval', $tagIds)) . ")
+            ) AS combined_attributes
+        ";
+
+        $result = $this->query($sql);
+        $attributeCount = count($result);
+
+        return [$tagIds[0] => $attributeCount];
+    }
+
+
+
 
     // Fetch all tags attached to attribute belonging to supplied event. No ACL if user not provided
     public function getTagScores($user=false, $eventId=0, $allowedTags=array())
