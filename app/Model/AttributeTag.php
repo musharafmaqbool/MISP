@@ -286,31 +286,38 @@ class AttributeTag extends AppModel
             return [];
         }
 
-        // Single query using UNION to get all attribute IDs from both sources:
-        // 1. Attributes directly tagged with the specified tags
-        // 2. Attributes from events that are tagged with the specified tags
-        $sql = "
-            SELECT DISTINCT attribute_id
-            FROM (
-                SELECT AttributeTag.attribute_id
-                FROM attribute_tags AS AttributeTag
-                WHERE AttributeTag.tag_id IN (" . implode(',', array_map('intval', $tagIds)) . ")
+        // First get attribute IDs directly tagged
+        $directAttributeIds = $this->Attribute->AttributeTag->find('list', [
+            'fields' => ['AttributeTag.attribute_id'],
+            'conditions' => ['AttributeTag.tag_id' => $tagIds],
+            'recursive' => -1
+        ]);
 
-                UNION
+        // Then get attribute IDs from tagged events in one query with join
+        $eventAttributeIds = $this->Attribute->find('list', [
+            'fields' => ['Attribute.id'],
+            'joins' => [
+                [
+                    'table' => 'event_tags',
+                    'alias' => 'EventTag',
+                    'type' => 'INNER',
+                    'conditions' => [
+                        'EventTag.event_id = Attribute.event_id',
+                        'EventTag.tag_id' => $tagIds
+                    ]
+                ]
+            ],
+            'recursive' => -1
+        ]);
 
-                SELECT Attribute.id AS attribute_id
-                FROM attributes AS Attribute
-                INNER JOIN event_tags AS EventTag ON Attribute.event_id = EventTag.event_id
-                WHERE EventTag.tag_id IN (" . implode(',', array_map('intval', $tagIds)) . ")
-            ) AS combined_attributes
-        ";
+        // Merge and count unique attributes
+        $allAttributeIds = array_unique(array_merge(
+            array_values($directAttributeIds),
+            array_values($eventAttributeIds)
+        ));
 
-        $result = $this->query($sql);
-        $attributeCount = count($result);
-
-        return [$tagIds[0] => $attributeCount];
+        return [$tagIds[0] => count($allAttributeIds)];
     }
-
 
 
 
