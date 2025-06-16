@@ -286,6 +286,7 @@ class AttributeTag extends AppModel
             return [];
         }
 
+        $countAllTags = [];
         foreach ($tagIds as $tagId) {
             // First get attribute IDs directly tagged
             $directAttributeIds = $this->Attribute->AttributeTag->find('list', [
