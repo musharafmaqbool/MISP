@@ -6453,6 +6453,13 @@ class Server extends AppModel
                     'type' => 'numeric',
                     'null' => true
                 ),
+                'default_restsearch_limit' => array(
+                    'level' => 1,
+                    'description' => 'Default number of matching result for restSearch API if none is provided when adding a new role. Leave empty(0) to set as unlimited.',
+                    'value' => 0,
+                    'errorMessage' => '',
+                    'null' => true
+                ),
                 'attribute_filters_block_only' => array(
                     'level' => 1,
                     'description' => __('This is a performance tweak to change the behaviour of restSearch to use attribute filters solely for blocking. This means that a lookup on the event scope with for example the type field set will be ignored unless it\'s used to strip unwanted attributes from the results. If left disabled, passing [ip-src, ip-dst] for example will return any event with at least one ip-src or ip-dst attribute. This is generally not considered to be too useful and is a heavy burden on the database.'),
@@ -6702,6 +6709,7 @@ class Server extends AppModel
                     'value' => '/var/www/MISP/.smime/email@address.com.pem',
                     'test' => 'testForEmpty',
                     'type' => 'string',
+                    'cli_only' => 1,
                 ),
                 'key_sign' => array(
                     'level' => 2,
@@ -6709,6 +6717,7 @@ class Server extends AppModel
                     'value' => '/var/www/MISP/.smime/email@address.com.key',
                     'test' => 'testForEmpty',
                     'type' => 'string',
+                    'cli_only' => 1,
                 ),
                 'password' => array(
                     'level' => 2,

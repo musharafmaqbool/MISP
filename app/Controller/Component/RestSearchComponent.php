@@ -151,6 +151,7 @@ class RestSearchComponent extends Component
             'org.local',
             'org.nationality',
             'galaxy.*',
+            'attackGalaxy',
         ],
         'Object' => [
             'returnFormat',
