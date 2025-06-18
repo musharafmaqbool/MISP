@@ -53,7 +53,7 @@ class AttributesController extends AppController
         $multiLineFields = ['value', 'tags', 'org_id', 'sharing_group_id', 'uuid'];
         foreach ($multiLineFields as $field) {
             if (isset($filters[$field]) && strstr($filters[$field], "\n")) {
-                $filters[$field] = explode("\n", rtrim($filters[$field], "\n"));
+                $filters[$field] = preg_split('/\n|\r\n?/', $filters[$field]);
             }
         }
         return $filters;
