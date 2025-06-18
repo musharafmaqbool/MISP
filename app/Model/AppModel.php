@@ -2293,6 +2293,9 @@ class AppModel extends Model
             case 138:
                 $sqlArray[] = "ALTER TABLE `events` MODIFY info text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;";
                 break;
+            case 139:
+                $sqlArray[] = "ALTER TABLE `roles` ADD `restsearch_limit_result` int(11) NULL DEFAULT NULL;";
+                break;
             case 140:
                 $sqlArray[] = "ALTER TABLE `taxii_servers` MODIFY `api_key` TEXT NOT NULL";
                 break;

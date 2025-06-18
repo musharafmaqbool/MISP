@@ -88,7 +88,7 @@ class RestResponseComponent extends Component
             'restSearch' => array(
                 'description' => "Search MISP using a list of filter parameters and return the data in the selected format. The search is available on an event and an attribute level, just select the scope via the URL (/events/restSearch vs /attributes/restSearch). Besides the parameters listed, other, format specific ones can be passed along (for example: requested_attributes and includeContext for the CSV export). This API allows pagination via the page and limit parameters.",
                 'mandatory' => array('returnFormat'),
-                'optional' => array('page', 'limit', 'value', 'type', 'category', 'org', 'tag', 'tags', 'event_tags', 'searchall', 'date', 'last', 'eventid', 'withAttachments', 'metadata', 'uuid', 'published', 'publish_timestamp', 'timestamp', 'enforceWarninglist', 'sgReferenceOnly', 'eventinfo', 'sharinggroup', 'excludeLocalTags', 'threat_level_id'),
+                'optional' => array('page', 'limit', 'value', 'type', 'category', 'org', 'tag', 'tags', 'event_tags', 'searchall', 'date', 'last', 'eventid', 'withAttachments', 'metadata', 'uuid', 'published', 'publish_timestamp', 'timestamp', 'enforceWarninglist', 'sgReferenceOnly', 'eventinfo', 'sharinggroup', 'excludeLocalTags', 'threat_level_id', 'attackGalaxy',),
                 'params' => array()
             ),
             'addTag' => array(
@@ -1271,6 +1271,12 @@ class RestResponseComponent extends Component
                 ),
                 'help' => __('The date from which the event was published')
             ),
+            'attackGalaxy' => array(
+                'input' => 'text',
+                'type' => 'string',
+                'operators' => array('equal'),
+                'help' => __('The Galaxy\'s type to use for the matrix')
+            ),
             'galaxy_cluster_uuid' => array(
             'input' => 'text',
             'type' => 'string',
@@ -1397,7 +1403,7 @@ class RestResponseComponent extends Component
                 'type' => 'integer',
                 'operators' => array('equal'),
                 'validation' => array('min' => 0, 'step' => 1),
-                'help' => __('Limit on the pagination')
+                'help' => __('Limit on the pagination. Lower bounded by the one set by the admin')
             ),
             'local' => array(
                 'input' => 'radio',

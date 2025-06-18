@@ -98,7 +98,7 @@ class AttributesController extends AppController
         }
         $params['conditions']['AND'][] = $this->MispAttribute->buildConditions($user);
         $paramArray = [
-            'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'search_token', 'uuid', 'page', 'limit', 'sort', 'direction'
+            'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'search_token', 'uuid', 'page', 'limit', 'sort', 'direction', 'object_relation'
         ];
         $filterData = array(
             'request' => $this->request,
@@ -125,6 +125,10 @@ class AttributesController extends AppController
         $conditions = $this->paginate['conditions'];
         $subqueryElements = $this->MispAttribute->Event->harvestSubqueryElements($filters);
         $filters = $this->MispAttribute->Event->addFiltersFromSubqueryElements($filters, $subqueryElements, $user);
+        $roleLimit = $this->User->getUserRestLimit($this->Auth->user(), $this);
+        if (empty($filters['limit']) || ($roleLimit != 0 && $filters['limit'] >= $roleLimit)) {
+            $filters['limit'] = $roleLimit;
+        }
         $request_filters = $filters;
         $params = array_merge($filters, [
             'limit' => $this->paginate['limit'] ?? null,
