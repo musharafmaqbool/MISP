@@ -24,111 +24,6 @@ class MysqlObserverExtended extends MysqlExtended
 
 >>>>>>> 64c0e5251 (fix: [dbo support check] added)
     /**
-     * Output SHA1 as binary, that is faster and uses less memory
-     * @param string $value
-     * @return string
-     */
-    public function cacheMethodHasher($value)
-    {
-        return sha1($value, true);
-    }
-
-
-    /**
-     * Renders a final SQL JOIN statement
-     *
-     * @param array $data The data to generate a join statement for.
-     * @return string
-     */
-    public function renderJoinStatement($data) {
-        //Fixed deprecation notice in PHP8.1 - fallback to empty string
-        if (!empty($data['type']) && strtoupper($data['type']) === 'STRAIGHT') {
-            return "{$data['type']}_JOIN {$data['table']} {$data['alias']} ON ({$data['conditions']})";
-        }
-        if (!empty($data['type']) && strtoupper($data['type']) === 'STRAIGHT_REVERSE') {
-            return "STRAIGHT_JOIN {$data['table']} AS {$data['alias']} ON ({$data['conditions']})";
-        }
-        if (strtoupper($data['type'] ?? "") === 'CROSS' || empty($data['conditions'])) {
-            return "{$data['type']} JOIN {$data['table']} {$data['alias']}";
-        }
-        return trim("{$data['type']} JOIN {$data['table']} {$data['alias']} ON ({$data['conditions']})");
-    }
-
-
-    /**
-     * Builds and generates an SQL statement from an array. Handles final clean-up before conversion.
-     *
-     * @param array $query An array defining an SQL query.
-     * @param Model $Model The model object which initiated the query.
-     * @return string An executable SQL statement.
-     * @see DboSource::renderStatement()
-     */
-    public function buildStatement($query, Model $Model)
-    {
-
-        $query = array_merge($this->_queryDefaults, $query);
-        $isReverseJoin = false;
-        if (!empty($query['joins'])) {
-            foreach ($query['joins'] as &$join) {
-                if (is_array($join)) {
-                    if (isset($join['type']) && $join['type'] === 'STRAIGHT_REVERSE') {
-                        // we're dealing with a reverse join, this means we need to reverse the order of joins
-                        $isReverseJoin = true;
-                        $reversed_table = $join['table'];
-                        $reversed_alias = $join['alias'];
-                        // we'll pass two additional parameters: the table and alias that would have been used as the primary table. These will replace the join table/alias in the rendered JOIN statement to swap the order
-                        $join = $this->buildJoinStatement($join, $query['alias'], $query['table']);
-                    } else if ($isReverseJoin) {
-                        // we have a STRAIGHT_REVERSE join already, can't add more joins (this is a limitation of the STRAIGHT reverse join code)
-                        throw new InvalidArgumentException(
-                            'Join type STRAIGHT_REVERSE can\'t be mixed with other joins.'
-                        );
-                    } else {
-                        // we're dealing with a regular set of JOINs so far, continue normally
-                        $join = $this->buildJoinStatement($join);
-                    }
-                    
-                }
-            }
-        }
-
-        if ($isReverseJoin) {
-            $query['alias'] = $this->name($reversed_alias);
-            $query['table'] = $this->fullTableName($reversed_table);
-            return $this->renderStatement('select', array(
-                'conditions' => $this->conditions($query['conditions'], true, true, $Model),
-                'fields' => implode(', ', $query['fields']),
-                'table' => $query['table'],
-                //'alias' => $this->name($query['table']),
-                'alias' => $this->alias . $this->name($query['alias']),
-                'order' => $this->order($query['order'], 'ASC', $Model),
-                'limit' => $this->limit($query['limit'], $query['offset']),
-                'joins' => implode(' ', $query['joins']),
-                'group' => $this->group($query['group'], $Model),
-                'having' => $this->having($query['having'], true, $Model),
-                'lock' => $this->getLockingHint($query['lock']),
-                'indexHint' => $this->__buildIndexHint($query['forceIndexHint'] ?? null),
-                'ignoreIndexHint' => $this->__buildIgnoreIndexHint($query['ignoreIndexHint'] ?? null),
-            ));
-        }
-
-        return $this->renderStatement('select', array(
-            'conditions' => $this->conditions($query['conditions'], true, true, $Model),
-            'fields' => implode(', ', $query['fields']),
-            'table' => $query['table'],
-            'alias' => $this->alias . $this->name($query['alias']),
-            'order' => $this->order($query['order'], 'ASC', $Model),
-            'limit' => $this->limit($query['limit'], $query['offset']),
-            'joins' => implode(' ', $query['joins']),
-            'group' => $this->group($query['group'], $Model),
-            'having' => $this->having($query['having'], true, $Model),
-            'lock' => $this->getLockingHint($query['lock']),
-            'indexHint' => $this->__buildIndexHint($query['forceIndexHint'] ?? null),
-            'ignoreIndexHint' => $this->__buildIgnoreIndexHint($query['ignoreIndexHint'] ?? null),
-        ));
-    }
-
-    /**
      * Builds and generates a JOIN condition from an array. Handles final clean-up before conversion.
      *
      * @param array $join An array defining a JOIN condition in a query.
@@ -161,6 +56,7 @@ class MysqlObserverExtended extends MysqlExtended
 	}
 
     /**
+<<<<<<< HEAD
      * Builds an SQL statement.
      *
      * This is merely a convenient wrapper to DboSource::buildStatement().
@@ -240,6 +136,8 @@ class MysqlObserverExtended extends MysqlExtended
 >>>>>>> 129ab6ec1 (chg: [objects restsearch] speed up attempt)
 
     /**
+=======
+>>>>>>> f862af33a (new: [database handler rework] Unified extended and observer extended)
      * - Do not call microtime when not necessary
      * - Count query count even when logging is disabled
      *
