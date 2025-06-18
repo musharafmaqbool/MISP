@@ -24,6 +24,7 @@ class MysqlObserverExtended extends MysqlExtended
 
 >>>>>>> 64c0e5251 (fix: [dbo support check] added)
     /**
+<<<<<<< HEAD
      * Builds and generates a JOIN condition from an array. Handles final clean-up before conversion.
      *
      * @param array $join An array defining a JOIN condition in a query.
@@ -138,6 +139,8 @@ class MysqlObserverExtended extends MysqlExtended
     /**
 =======
 >>>>>>> f862af33a (new: [database handler rework] Unified extended and observer extended)
+=======
+>>>>>>> 33a774d0e (fix: [database handler] fixed)
      * - Do not call microtime when not necessary
      * - Count query count even when logging is disabled
      *
