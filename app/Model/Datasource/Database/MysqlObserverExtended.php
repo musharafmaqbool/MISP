@@ -7,6 +7,14 @@ App::uses('Mysql', 'Model/Datasource/Database');
  */
 class MysqlObserverExtended extends Mysql
 {
+    public $supports = [
+        'indexHints' => true,
+        'ignoreIndexHints' => true,
+        'reverseJoin' => true,
+        'straightJoin' => true,
+        'insertMulti' => true,
+    ];
+
     /**
      * Output SHA1 as binary, that is faster and uses less memory
      * @param string $value
