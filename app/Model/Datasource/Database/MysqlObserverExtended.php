@@ -8,6 +8,9 @@ App::uses('MysqlExtended', 'Model/Datasource/Database');
 class MysqlObserverExtended extends MysqlExtended
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 64c0e5251 (fix: [dbo support check] added)
     public $supports = [
         'indexHints' => true,
         'ignoreIndexHints' => true,
@@ -15,7 +18,11 @@ class MysqlObserverExtended extends MysqlExtended
         'straightJoin' => true,
         'insertMulti' => true,
     ];
+<<<<<<< HEAD
 =======
+=======
+
+>>>>>>> 64c0e5251 (fix: [dbo support check] added)
     /**
      * Output SHA1 as binary, that is faster and uses less memory
      * @param string $value
