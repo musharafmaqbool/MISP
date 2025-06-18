@@ -4540,12 +4540,4 @@ class AppModel extends Model
         }
         return false;
     }
-
-    public function checkDbSupport($functionality)
-    {
-        if (isset($this->getDataSource()->supports) && !empty($this->getDataSource()->supports[$functionality])) {
-            return $this->getDataSource()->supports[$functionality];
-        }
-        return false;
-    }
 }
