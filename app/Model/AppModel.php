@@ -4524,4 +4524,12 @@ class AppModel extends Model
         $redis->expire($path, 3600);
         return $token;
     }
+
+    public function checkDbSupport($functionality)
+    {
+        if (isset($this->getDataSource()->supports) && !empty($this->getDataSource()->supports[$functionality])) {
+            return $this->getDataSource()->supports[$functionality];
+        }
+        return false;
+    }
 }
