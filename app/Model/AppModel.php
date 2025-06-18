@@ -3519,16 +3519,21 @@ class AppModel extends Model
         return true;
     }
 
-    public function setupHttpSocket($server, $HttpSocket = null, $timeout = false)
+    public function setupHttpSocket($server, $HttpSocket = null, $timeout = false, $model = null)
     {
         if (empty($HttpSocket)) {
             App::uses('SyncTool', 'Tools');
             $syncTool = new SyncTool();
-            $HttpSocket = $syncTool->setupHttpSocket($server, $timeout);
+
+            if ($model !== null) {
+                $HttpSocket = $syncTool->setupHttpSocket($server, $timeout, $model);
+            } else {
+                $HttpSocket = $syncTool->setupHttpSocket($server, $timeout);
+            }
         }
         return $HttpSocket;
     }
-
+    
     /**
      * @param array $server
      * @param string $model
@@ -4526,6 +4531,14 @@ class AppModel extends Model
             $this->GalaxyCluster->saveMany($chunk, $options);
         }
         return true;
+    }
+
+    public function checkDbSupport($functionality)
+    {
+        if (isset($this->getDataSource()->supports) && !empty($this->getDataSource()->supports[$functionality])) {
+            return $this->getDataSource()->supports[$functionality];
+        }
+        return false;
     }
 
     public function checkDbSupport($functionality)
