@@ -301,7 +301,7 @@ class Server extends AppModel
      * @param array $pullRules
      * @return bool Return true if event was emptied by pull rules
      */
-    private function __updatePulledEventBeforeInsert(array &$event, array $server, array $user, array $pullRules)
+    private function __updatePulledEventBeforeInsert(array &$event, array $server, array $user, array $pullRules, $remoteUser = false)
     {
         $pullRulesEmptiedEvent = false;
         // we have an Event array
@@ -311,7 +311,7 @@ class Server extends AppModel
             $event['Event']['distribution'] = '1';
         }
         // Distribution
-        if (empty(Configure::read('MISP.host_org_id')) || !$server['Server']['internal'] ||  Configure::read('MISP.host_org_id') != $server['Server']['org_id']) {
+        if (empty(Configure::read('MISP.host_org_id')) || !$server['Server']['internal'] ||  Configure::read('MISP.host_org_id') != $server['Server']['org_id'] || empty($remoteUser['Role']['perm_sync_internal'])) {
             switch ($event['Event']['distribution']) {
                 case 1:
                     // if community only, downgrade to org only after pull
@@ -498,7 +498,7 @@ class Server extends AppModel
         $passAlong = $server['Server']['id'];
         if (!$existingEvent) {
             // add data for newly imported events
-            if (isset($event['Event']['protected']) && $event['Event']['protected']) {
+            if (!$server['Server']['internal'] && isset($event['Event']['protected']) && $event['Event']['protected']) {
                 if (!$eventModel->CryptographicKey->validateProtectedEvent($response->body, $user, $response->getHeader('x-pgp-signature'), $event)) {
                     $fails[$eventId] = __('Event failed the validation checks. The remote instance claims that the event can be signed with a valid key which is sus.');
                     return false;
@@ -518,7 +518,7 @@ class Server extends AppModel
             if (!$existingEvent['Event']['locked'] && !$server['Server']['internal']) {
                 $fails[$eventId] = __('Blocked an edit to an event that was created locally. This can happen if a synchronised event that was created on this instance was modified by an administrator on the remote side.');
             } else {
-                if ($existingEvent['Event']['protected']) {
+                if (!$server['Server']['internal'] && $existingEvent['Event']['protected']) {
                     if (!$eventModel->CryptographicKey->validateProtectedEvent($response->body, $user, $response->getHeader('x-pgp-signature'), $existingEvent)) {
                         $fails[$eventId] = __('Event failed the validation checks. The remote instance claims that the event can be signed with a valid key which is sus.');
                         return false;
@@ -572,7 +572,8 @@ class Server extends AppModel
             return false;
         }
 
-        $pullRulesEmptiedEvent = $this->__updatePulledEventBeforeInsert($event, $serverSync->server(), $user, $serverSync->pullRules());
+        $remoteUser = $serverSync->cachedUserInfo();
+        $pullRulesEmptiedEvent = $this->__updatePulledEventBeforeInsert($event, $serverSync->server(), $user, $serverSync->pullRules(), $remoteUser);
 
         if (!$this->__checkIfEventSaveAble($event)) {
             if (!$pullRulesEmptiedEvent) { // The event is empty because of the filtering rule. This is not considered a failure
@@ -1347,11 +1348,11 @@ class Server extends AppModel
      * @param array $events
      * @return array|false
      */
-    private function getEventIdsForPush(array $server, ServerSyncTool $serverSync, array $events)
+    private function getEventIdsForPush(array $server, ServerSyncTool $serverSync, array $events, $ignoreFilterRules = false)
     {
         $request = [];
         foreach ($events as $event) {
-            if (empty($this->eventFilterPushableServers($event, [$server]))) {
+            if (!$ignoreFilterRules && empty($this->eventFilterPushableServers($event, [$server]))) {
                 continue;
             }
             $request[] = ['Event' => [
@@ -2804,6 +2805,101 @@ class Server extends AppModel
     }
 
     /**
+     * @param string $id
+     * @param string $method
+     * @return array
+     * @throws Exception
+     */
+    public function runTestSyncRules($id, $method): array
+    {
+        $results = [];
+        $server = $this->find('first', array(
+            'conditions' => array('Server.id' => $id),
+            'contain' => [
+                'RemoteOrg' => ['fields' => ['RemoteOrg.id', 'RemoteOrg.uuid', 'RemoteOrg.name']]
+            ],
+            'recursive' => -1,
+        ));
+        if (empty($server)) {
+            return null; // server not found
+        }
+
+        $serverSync = new ServerSyncTool($server, $this->setupSyncRequest($server));
+
+        try {
+            $eventArrayWithRules = '?';
+            $eventArrayWithoutRules = '?';
+            if ($method == 'pull') {
+                $eventArrayWithRules = $this->getEventIndexFromServer($serverSync, false);
+                $eventArrayWithoutRules = $this->getEventIndexFromServer($serverSync, true);
+            } else {
+                $this->Event = ClassRegistry::init('Event');
+                $eventid_conditions_key = 'Event.id >';
+                $eventid_conditions_value = 0;
+                $sgs = $this->Event->SharingGroup->find('all', [
+                    'recursive' => -1,
+                    'contain' => ['Organisation', 'SharingGroupOrg' => ['Organisation'], 'SharingGroupServer'],
+                ]);
+                $sgIds = [];
+                foreach ($sgs as $sg) {
+                    if ($this->Event->SharingGroup->checkIfServerInSG($sg, $server)) {
+                        $sgIds[] = $sg['SharingGroup']['id'];
+                    }
+                }
+                if (empty($sgIds)) {
+                    $sgIds = [-1];
+                }
+                $tableName = $this->Event->EventReport->table;
+                $eventReportQuery = sprintf('EXISTS (SELECT id, deleted FROM %s WHERE %s.event_id = Event.id and %s.deleted = 0)', $tableName, $tableName, $tableName);
+                $findParams = [
+                    'conditions' => [
+                        $eventid_conditions_key => $eventid_conditions_value,
+                        'Event.published' => 1,
+                        'OR' => [
+                            ['Event.attribute_count >' => 0],
+                            [$eventReportQuery],
+                        ],
+                        'OR' => [
+                            [
+                                'AND' => [
+                                    ['Event.distribution >' => 0],
+                                    ['Event.distribution <' => 4],
+                                ],
+                            ],
+                            [
+                                'AND' => [
+                                    'Event.distribution' => 4,
+                                    'Event.sharing_group_id' => $sgIds
+                                ],
+                            ]
+                        ]
+                    ],
+                    'recursive' => -1,
+                    'contain' => ['EventTag' => ['fields' => ['EventTag.tag_id']]],
+                    'fields' => ['Event.id', 'Event.timestamp', 'Event.sighting_timestamp', 'Event.uuid', 'Event.orgc_id'],
+                ];
+                $eventIds = $this->Event->find('all', $findParams);
+                $eventArrayWithRules = $this->getEventIdsForPush($server, $serverSync, $eventIds, false);
+                $eventArrayWithoutRules = $this->getEventIdsForPush($server, $serverSync, $eventIds, true);
+            }
+
+            $results = [
+                'with_rules' => count($eventArrayWithRules),
+                'without_rules' => count($eventArrayWithoutRules),
+            ];
+        } catch (HttpSocketHttpException $e) {
+            $this->logException('Could not perform sync rules test.', $e);
+            return ['error' => $e->getCode()];
+        } catch (Exception $e) {
+            $this->logException('Could not perform sync rules test.', $e);
+            $message = __('Could not perform sync rules test.');
+            $this->loadLog()->createLogEntry('SYSTEM', 'error', 'Server', $id, 'Error: ' . $message);
+            return ['error' => $message];
+        }
+        return $results;
+    }
+
+    /**
      * @param array $server
      * @param array $user
      * @param ServerSyncTool|null $serverSync
@@ -2874,7 +2970,7 @@ class Server extends AppModel
         if ($response === false && $localVersion['hotfix'] < $remoteVersion[2]) {
             $response = "Sync to Server ('{$server['Server']['id']}') initiated, but the remote instance is a few hotfixes ahead. Make sure you keep your instance up to date!";
         }
-        if (empty($response) && $remoteVersion[2] < 111) {
+        if (empty($response) && $remoteVersion[1] <= 4 && $remoteVersion[2] < 111) {
             $response = "Sync to Server ('{$server['Server']['id']}') initiated, but version 2.4.111 is required in order to be able to pull proposals from the remote side.";
         }
 
@@ -3553,7 +3649,10 @@ class Server extends AppModel
 
     public function stixDiagnostics(&$diagnostic_errors)
     {
-        $expected = array('stix' => '>1.2.0.11', 'cybox' => '>2.1.0.21', 'mixbox' => '>1.0.5', 'maec' => '>4.1.0.17', 'stix2' => '>3.0.0', 'pymisp' => '>2.4.120');
+        $expected = array(
+            'stix' => '>=1.2.0.11', 'cybox' => '>=2.1.0.21', 'mixbox' => '>=1.0.5', 'maec' => '>=4.1.0.17',
+            'stix2' => '>=3.0.1', 'pymisp' => '>=2.5.1', 'misp-stix' => '>=2025.2.14'
+        );
         // check if the STIX and Cybox libraries are working using the test script stixtest.py
         $scriptFile = APP . 'files' . DS . 'scripts' . DS . 'stixtest.py';
         try {
@@ -3579,7 +3678,8 @@ class Server extends AppModel
                 'mixbox' => array('expected' => $expected['mixbox']),
                 'maec' => array('expected' => $expected['maec']),
                 'stix2' => array('expected' => $expected['stix2']),
-                'pymisp' => array('expected' => $expected['pymisp'])
+                'pymisp' => array('expected' => $expected['pymisp']),
+                'misp-stix' => array('expected' => $expected['misp-stix'])
             );
         }
         $scriptResult['operational'] = $scriptResult['success'];
@@ -3595,7 +3695,7 @@ class Server extends AppModel
             $result[$package]['version'] = $scriptResult[$package];
             $result[$package]['expected'] = $expectedVersion;
             if ($expectedVersion[0] === '>') {
-                $result[$package]['status'] = version_compare($result[$package]['version'], trim($expectedVersion, '>')) >= 0 ? 1 : 0;
+                $result[$package]['status'] = version_compare($result[$package]['version'], trim($expectedVersion, '>=')) >= 0 ? 1 : 0;
             } else {
                 $result[$package]['status'] = $result[$package]['version'] === $expectedVersion ? 1 : 0;
             }
@@ -4110,18 +4210,41 @@ class Server extends AppModel
                 }
             }
             if (!empty($push_rules['orgs']['OR'])) {
-                if (!in_array($event['Event']['orgc_id'], $push_rules['orgs']['OR'])) {
+                $convertedRule = $this->convertUUIDsToIDs($push_rules['orgs']['OR']);
+                if (!in_array($event['Event']['orgc_id'], $convertedRule)) {
                     continue;
                 }
             }
             if (!empty($push_rules['orgs']['NOT'])) {
-                if (in_array($event['Event']['orgc_id'], $push_rules['orgs']['NOT'])) {
+                $convertedRule = $this->convertUUIDsToIDs($push_rules['orgs']['NOT']);
+                if (in_array($event['Event']['orgc_id'], $convertedRule)) {
                     continue;
                 }
             }
             $validServers[] = $server;
         }
         return $validServers;
+    }
+
+    private function convertUUIDsToIDs($orgs): array
+    {
+        $orgIDs = [];
+        $toConvert = [];
+        foreach ($orgs as $org) {
+            if (Validation::uuid($org)) {
+                $toConvert[] = $org;
+            } else {
+                $orgIDs[] = $org;
+            }
+        }
+        $converted = $this->Organisation->find('column', [
+            'fields' => ['id'],
+            'conditions' => [
+                'uuid' => $toConvert,
+            ],
+        ]);
+        $orgIDs = array_merge($orgIDs, $converted);
+        return $orgIDs;
     }
 
     /**
@@ -4387,6 +4510,7 @@ class Server extends AppModel
             'app/files/scripts/misp-opendata',
             'app/files/scripts/python-maec',
             'app/files/scripts/python-stix',
+            'app/files/scripts/misp-stix'
         );
         return in_array($submodule, $accepted_submodules_names, true);
     }
@@ -4929,6 +5053,8 @@ class Server extends AppModel
                 __('User') => $user['User']['email'],
                 __('Role name') => $user['Role']['name'] ?? __('Unknown, outdated instance'),
                 __('Sync flag') => isset($user['Role']['perm_sync']) ? ($user['Role']['perm_sync'] ? __('Yes') : __('No')) : __('Unknown, outdated instance'),
+                __('Sync Internal flag') => isset($user['Role']['perm_sync_internal']) ? ($user['Role']['perm_sync_internal'] ? __('Yes') : __('No')) : __('Unknown, outdated instance'),
+                __('Sync Authoritative flag') => isset($user['Role']['perm_sync_authoritative']) ? ($user['Role']['perm_sync_authoritative'] ? __('Yes') : __('No')) : __('Unknown, outdated instance'),
             ];
             if ($response->getHeader('X-Auth-Key-Expiration')) {
                 $date = new DateTime($response->getHeader('X-Auth-Key-Expiration'));
@@ -5023,9 +5149,12 @@ class Server extends AppModel
         $this->Tag = ClassRegistry::init('Tag');
         $organisations = [];
         if ($user['Role']['perm_sharing_group'] || !Configure::read('Security.hide_organisation_index_from_users')) {
-            $organisations = $this->Organisation->find('column', [
-                'fields' => ['name'],
+            $organisations = $this->Organisation->find('all', [
+                'fields' => ['name', 'uuid'],
             ]);
+            $organisations = array_map(function($org) {
+                return ['name' => $org['Organisation']['name'], 'uuid' => $org['Organisation']['uuid']];
+            }, $organisations);
         }
         $tags = $this->Tag->find('column', [
             'fields' => ['name'],
@@ -5182,6 +5311,14 @@ class Server extends AppModel
                     'type' => 'numeric',
                     'null' => true
                 ),
+                'object_fetch_hard_limit'=> [
+                    'level' => 1,
+                    'description' => __('This value controls the the maximum number of objects that can be fetched in one shot via /objects/restSearch. If a query would exceed the given limit, it will iterate internally to build the result-set, so it will only effect the internals, however, it can resolve object restSearch failures due to high memory allocation to php.ini. Setting this to 0 will disable the cap altogether and revert to the old behaviour. Defaults to 0 (disabled).'),
+                    'value' => 0,
+                    'test' => 'testForNumeric',
+                    'type' => 'numeric',
+                    'null' => true
+                ],
                 'curl_request_timeout' => [
                     'level' => 1,
                     'description' => __('Control the default timeout in seconds of curl HTTP requests issued by MISP (during synchronisation, feed fetching, etc.)'),
@@ -5221,7 +5358,7 @@ class Server extends AppModel
                 'correlation_limit' => [
                     'level' => 0,
                     'description' => __('Set a value for the maximum number of correlations a value should have before MISP will refuse to correlate it (extremely over-correlating values are rarely useful from a correlation perspective).'),
-                    'value' => 100,
+                    'value' => 20,
                     'test' => 'testForNumeric',
                     'type' => 'numeric',
                     'null' => true
@@ -5522,7 +5659,7 @@ class Server extends AppModel
                 ),
                 'download_attachments_on_load' => array(
                     'level' => 2,
-                    'description' => __('Always download attachments when loaded by a user in a browser'),
+                    'description' => __('Always download attachments when loaded by a user in a browser. It is highly recommended to leave this setting on true, as otherwise opening an attachment can lead to the execution of malicious code via XSS.'),
                     'value' => true,
                     'test' => 'testBool',
                     'type' => 'boolean',
@@ -5692,6 +5829,19 @@ class Server extends AppModel
                 'default_analyst_data_distribution' => array(
                     'level' => 1,
                     'description' => __('The default distribution setting for analyst-data (notes, opinions, ...) (0-3)'),
+                    'value' => '1',
+                    'test' => 'testForEmpty',
+                    'type' => 'string',
+                    'options' => array(
+                        '0' => __('Your organisation only'),
+                        '1' => __('This community only'),
+                        '2' => __('Connected communities'),
+                        '3' => __('All communities'),
+                    ),
+                ),
+                'default_galaxy_distribution' => array(
+                    'level' => 1,
+                    'description' => __('The default distribution setting for Galaxies and Clusters (0-3)'),
                     'value' => '1',
                     'test' => 'testForEmpty',
                     'type' => 'string',
@@ -6314,6 +6464,13 @@ class Server extends AppModel
                     'type' => 'numeric',
                     'null' => true
                 ),
+                'default_restsearch_limit' => array(
+                    'level' => 1,
+                    'description' => 'Default number of matching result for restSearch API if none is provided when adding a new role. Leave empty(0) to set as unlimited.',
+                    'value' => 0,
+                    'errorMessage' => '',
+                    'null' => true
+                ),
                 'attribute_filters_block_only' => array(
                     'level' => 1,
                     'description' => __('This is a performance tweak to change the behaviour of restSearch to use attribute filters solely for blocking. This means that a lookup on the event scope with for example the type field set will be ignored unless it\'s used to strip unwanted attributes from the results. If left disabled, passing [ip-src, ip-dst] for example will return any event with at least one ip-src or ip-dst attribute. This is generally not considered to be too useful and is a heavy burden on the database.'),
@@ -6563,6 +6720,7 @@ class Server extends AppModel
                     'value' => '/var/www/MISP/.smime/email@address.com.pem',
                     'test' => 'testForEmpty',
                     'type' => 'string',
+                    'cli_only' => 1,
                 ),
                 'key_sign' => array(
                     'level' => 2,
@@ -6570,6 +6728,7 @@ class Server extends AppModel
                     'value' => '/var/www/MISP/.smime/email@address.com.key',
                     'test' => 'testForEmpty',
                     'type' => 'string',
+                    'cli_only' => 1,
                 ),
                 'password' => array(
                     'level' => 2,
@@ -6803,7 +6962,7 @@ class Server extends AppModel
                 ],
                 'otp_required' => array(
                     'level' => 2,
-                    'description' => __('Require authentication with OTP. Users that do not have (T/H)OTP configured will be forced to create a token at first login. You cannot use it in combination with external authentication plugins.'),
+                    'description' => __('Require authentication with OTP. Users that do not have (T/H)OTP configured will be forced to create a token at first login.'),
                     'value' => false,
                     'test' => 'testBool',
                     'beforeHook' => 'otpBeforeHook',
@@ -7630,14 +7789,16 @@ class Server extends AppModel
                     'description' => __('AWS key to use when uploading samples (WARNING: It\' highly recommended that you use EC2 IAM roles if at all possible)'),
                     'value' => '',
                     'test' => 'testForEmpty',
-                    'type' => 'string'
+                    'type' => 'string',
+                    'redacted' => true
                 ),
                 'S3_aws_secret_key' => array(
                     'level' => 2,
                     'description' => __('AWS secret key to use when uploading samples'),
                     'value' => '',
                     'test' => 'testForEmpty',
-                    'type' => 'string'
+                    'type' => 'string',
+                    'redacted' => true
                 ),
                 'Sightings_policy' => array(
                     'level' => 1,
