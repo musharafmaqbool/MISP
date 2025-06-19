@@ -1036,6 +1036,7 @@ class TestComprehensive(unittest.TestCase):
             search_result = self._search_event({
                 'returnFormat': 'json',
                 'is_extended': 1,
+                'eventid': [event.id, event_1son.id, event_2son.id, event_2son_1son.id]
             })
 
             self.assertEqual(len(search_result), 2, search_result)
@@ -1045,6 +1046,7 @@ class TestComprehensive(unittest.TestCase):
             search_result = self._search_event({
                 'returnFormat': 'json',
                 'is_extended': 0,
+                'eventid': [event.id, event_1son.id, event_2son.id, event_2son_1son.id]
             })
             self.assertEqual(len(search_result), 2, search_result)
             self.assertEqual(search_result[0]['Event']['extends_uuid'], event.uuid)
@@ -1053,6 +1055,7 @@ class TestComprehensive(unittest.TestCase):
             search_result = self._search_event({
                 'returnFormat': 'json',
                 'is_extension': [1],
+                'eventid': [event.id, event_1son.id, event_2son.id, event_2son_1son.id]
             })
             self.assertEqual(len(search_result),3, search_result)
             self.assertEqual(search_result[0]['Event']['extends_uuid'], event.uuid)
@@ -1062,6 +1065,7 @@ class TestComprehensive(unittest.TestCase):
             search_result = self._search_event({
                 'returnFormat': 'json',
                 'is_extension': False,
+                'eventid': [event.id, event_1son.id, event_2son.id, event_2son_1son.id]
             })
             self.assertEqual(len(search_result), 1, search_result)
             self.assertEqual(search_result[0]['Event']['extends_uuid'], '')
