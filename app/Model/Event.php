@@ -4421,7 +4421,7 @@ class Event extends AppModel
             $changed = false;
             // If a field is not set in the request, just reuse the old value
             // Also, compare the event to the existing event and see whether this is a meaningful change
-            $recoverFields = array('analysis', 'threat_level_id', 'info', 'distribution', 'date', 'org_id');
+            $recoverFields = array('analysis', 'threat_level_id', 'info', 'distribution', 'date', 'org_id', 'protected');
             foreach ($recoverFields as $rF) {
                 if (!isset($data['Event'][$rF])) {
                     $data['Event'][$rF] = $existingEvent['Event'][$rF];
@@ -4454,7 +4454,8 @@ class Event extends AppModel
             'timestamp',
             'sharing_group_id',
             'disable_correlation',
-            'extends_uuid'
+            'extends_uuid',
+            'protected'
         );
         $saveResult = $this->save(array('Event' => $data['Event']), array('fieldList' => $fieldList));
         if ($saveResult) {
