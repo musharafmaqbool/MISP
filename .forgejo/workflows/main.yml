@@ -155,16 +155,16 @@ jobs:
         shell: bash
         run: |
           # Set perms
-          chown -R $USER:www-data `pwd`
-          chmod -R 775 `pwd`
-          chmod -R g+ws `pwd`/app/tmp
-          chmod -R g+ws `pwd`/app/tmp/cache
-          chmod -R g+ws `pwd`/app/tmp/cache/persistent
-          chmod -R g+ws `pwd`/app/tmp/cache/models
-          chmod -R g+ws `pwd`/app/tmp/logs
-          chmod -R g+ws `pwd`/app/files
-          chmod -R g+ws `pwd`/app/files/scripts/tmp
-          chown -R $USER:www-data `pwd`
+          chown -R $USER:www-data $WORKSPACE
+          chmod -R 775 $WORKSPACE
+          chmod -R g+ws $WORKSPACE /app/tmp
+          chmod -R g+ws $WORKSPACE /app/tmp/cache
+          chmod -R g+ws $WORKSPACE /app/tmp/cache/persistent
+          chmod -R g+ws $WORKSPACE /app/tmp/cache/models
+          chmod -R g+ws $WORKSPACE /app/tmp/logs
+          chmod -R g+ws $WORKSPACE /app/files
+          chmod -R g+ws $WORKSPACE /app/files/scripts/tmp
+          chown -R $USER:www-data $WORKSPACE
 
           # Fill database with basic MISP schema
           mysql -h 127.0.0.1 --port 3306 -u root -pbar -e "SET GLOBAL sql_mode = 'STRICT_ALL_TABLES';"
@@ -263,7 +263,7 @@ jobs:
             && app/Console/cake Admin setSetting "MISP.redis_database" 13 \
             && app/Console/cake Admin setSetting "MISP.redis_password" "" \
             && app/Console/cake Admin setSetting "GnuPG.email" "info@admin.test" \
-            && app/Console/cake Admin setSetting "GnuPG.homedir" "$(pwd)/.gnupg" \
+            && app/Console/cake Admin setSetting "GnuPG.homedir" "$WORKSPACE/.gnupg" \
             && app/Console/cake Admin setSetting "GnuPG.password" "travistest" \
             && app/Console/cake Admin setSetting "MISP.download_gpg_from_homedir" 1
 
