@@ -194,10 +194,10 @@ class AttributesController extends AppController
             foreach ($request_filters as $k => $v) {
                 if (is_array($v)) {
                     foreach ($v as $vv) {
-                        $export_filters .= $k . '[]:' . $vv . '/';
+                        $export_filters .= urlencode($k) . '[]:' . urlencode($vv) . '/';
                     }
                 } else {
-                    $export_filters .= $k . ':' . $v . '/';
+                    $export_filters .= urlencode($k) . ':' . urlencode($v) . '/';
                 }
             }
         }
