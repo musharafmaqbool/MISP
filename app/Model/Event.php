@@ -6413,7 +6413,7 @@ class Event extends AppModel
                     }
                 }
             }
-            $stixVersion = $decoded['stix_version'];
+            $stixVersion = 'STIX ' . $decoded['stix_version'];
             $created_id = false;
             $validationIssues = false;
             $result = $this->_add($data, true, $user, '', null, false, null, $created_id, $validationIssues);
