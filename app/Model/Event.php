@@ -4258,6 +4258,9 @@ class Event extends AppModel
             $values = [$attribute['value']];
         }
         foreach ($values as $value) {
+            if (is_array($value)) {
+                throw new MethodNotAllowedException(__('Attribute value is an array, which is not allowed: [%s]', implode(', ', $attribute['value'])));
+            }
             $value = hash('sha256', $attribute['value']);
             if (!isset($value_table[$value])) {
                 $value_table[$value] = ['v' => $attribute['value'], 'data' => [['o' => $object_id, 'a' => $attribute_id]]];
