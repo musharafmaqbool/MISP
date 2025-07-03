@@ -6413,6 +6413,17 @@ class Event extends AppModel
                     }
                 }
             }
+            $existingEvent = $this->find('first', ['conditions' => ['Event.uuid' => $data['Event']['uuid']], 'recursive' => -1]);
+            if (!empty($existingEvent)) {
+                if (($user['Role']['perm_modify_org'] && $existingEvent['Event']['orgc_id'] == $user['org_id']) || ($user['Role']['perm_modify'] && $existingEvent['Event']['user_id'] == $user['id'])) {
+                    $eventid = $existingEvent['Event']['id'];
+                    $result = $this->_edit($data, $user, $eventid, null, null, true);
+                    if ($result === true) {
+                        return $eventid;
+                    }
+                }
+                return __('Event with the same UUID already exists, and you do not have the permission to modify it.');
+            }
             $stixVersion = 'STIX ' . $decoded['stix_version'];
             $created_id = false;
             $validationIssues = false;
