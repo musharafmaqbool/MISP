@@ -1863,16 +1863,21 @@ class Attribute extends AppModel
         if (!empty($options['includeDecayScore'])) {
             $options['includeEventTags'] = true;
         }
+
+        $default_fields = [
+            'Attribute.*',
+            'Event.id','Event.info','Event.org_id','Event.orgc_id','Event.uuid','Event.user_id',
+            'Object.id','Object.distribution','Object.sharing_group_id'
+        ];
+        if (!empty($options['fields']) && is_array($options['fields'])) {
+            $fields = array_merge($default_fields, $options['fields']);
+        } else {
+            $fields = $default_fields;
+        }
     
         $sgids     = $this->SharingGroup->authorizedIds($user);
-
         $params = [
-            'fields'     => $options['fields']
-                              ?? [
-                                  'Attribute.*',
-                                  'Event.id','Event.info','Event.org_id','Event.orgc_id','Event.uuid','Event.user_id',
-                                  'Object.id','Object.distribution','Object.sharing_group_id'
-                                ],
+            'fields'     => $fields,
             'conditions' => $conditions,
             'recursive'  => -1,
             'contain'    => ['AttributeTag'],
