@@ -1853,7 +1853,7 @@ class Attribute extends AppModel
                 [
                     'table'      => 'events',
                     'alias'      => 'Event',
-                    'type'       => 'STRAIGHT_JOIN',
+                    'type'       => 'STRAIGHT',
                     'conditions' => ['Event.id = Attribute.event_id']
                 ],
                 [
