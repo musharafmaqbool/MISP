@@ -1857,10 +1857,10 @@ class Attribute extends AppModel
         if (isset($options['score'])) {
             $options['modelOverrides']['threshold'] = $options['score'];
         }
-        if ($options['excludeDecayed']) {
+        if (!empty($options['excludeDecayed'])) {
             $options['includeDecayScore'] = true;
         }
-        if ($options['includeDecayScore']) {
+        if (!empty($options['includeDecayScore'])) {
             $options['includeEventTags'] = true;
         }
     
@@ -1881,17 +1881,7 @@ class Attribute extends AppModel
                     'table'      => 'events',
                     'alias'      => 'Event',
                     'type'       => 'STRAIGHT',
-                    'conditions' => [
-                    'Event.id = Attribute.event_id',
-                    'Event.org_id'                => $user['org_id'],
-                    'Event.distribution IN'       => [1,2,3],
-                    [
-                        'OR' => [
-                        ['Event.distribution'      => 4],
-                        ['Event.sharing_group_id IN' => $sgids]
-                        ]
-                    ]
-                    ]
+                    'conditions' => ['Event.id = Attribute.event_id']
                 ],
                 [
                     'table'      => 'objects',
