@@ -1133,7 +1133,7 @@ class Attribute extends AppModel
                 $evtField = $options['scope'] === 'Event'
                         ? 'Event.id' : 'Attribute.event_id';
                 $attrField = $options['scope'] === 'Event'
-                        ? 'Event.id' : 'Attribute.id';
+                        ? 'AT.event_id = Event.id' : 'AT.attribute_id = Attribute.id';
 
                 // EXISTS on event_tags
                 $existsEvent = 
@@ -1142,13 +1142,12 @@ class Attribute extends AppModel
                     WHERE ET.event_id = {$evtField}
                         AND ET.tag_id    IN ({$inPosList})
                 )";
-
                 if ($tag_key !== 'event_tags') {
                     // EXISTS on attribute_tags
                     $existsAttr = 
                     "EXISTS (
                         SELECT 1 FROM attribute_tags AT
-                        WHERE AT.attribute_id = {$attrField}
+                        WHERE {$attrField}
                             AND AT.tag_id       IN ({$inPosList})
                     )";
                     $conditions['AND'][] = ['OR' => [$existsEvent, $existsAttr]];
@@ -1183,11 +1182,11 @@ class Attribute extends AppModel
                 // for attributes
                 if ($options['scope'] === 'all' || $options['scope'] === 'Attribute') {
                     $attrFieldNeg = $options['scope'] === 'Event'
-                                ? 'Event.id' : 'Attribute.id';
+                                ? 'AT2.event_id = Event.id' : 'AT2.attribute_id = Attribute.id';
                     $conditions['AND'][] =
                     "NOT EXISTS (
                         SELECT 1 FROM attribute_tags AT2
-                        WHERE AT2.attribute_id = {$attrFieldNeg}
+                        WHERE {$attrFieldNeg}
                             AND AT2.tag_id        IN ({$inNegList})
                     )";
                 }
@@ -1207,7 +1206,7 @@ class Attribute extends AppModel
                     $evtFieldAnd  = $options['scope'] === 'Event'
                                 ? 'Event.id' : 'Attribute.event_id';
                     $attrFieldAnd = $options['scope'] === 'Event'
-                                ? 'Event.id' : 'Attribute.id';
+                                ? 'AT3.event_id = Event.id' : 'AT3.attribute_id = Attribute.id';
 
                     $existsEvtAnd = 
                     "EXISTS (
@@ -1220,7 +1219,7 @@ class Attribute extends AppModel
                         $existsAttrAnd =
                         "EXISTS (
                             SELECT 1 FROM attribute_tags AT3
-                            WHERE AT3.attribute_id = {$attrFieldAnd}
+                            WHERE {$attrFieldAnd}
                                 AND AT3.tag_id        = {$t}
                         )";
                         $conditions['AND'][] =
@@ -1248,7 +1247,6 @@ class Attribute extends AppModel
         if (empty($params[$tag_key])) {
             unset($params[$tag_key]);
         }
-
         return $conditions;
     }
 
