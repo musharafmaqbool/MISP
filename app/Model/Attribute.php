@@ -1875,7 +1875,7 @@ class Attribute extends AppModel
                                 ],
             'conditions' => $conditions,
             'recursive'  => -1,
-            'contain'    => false,
+            'contain'    => ['AttributeTag'],
             'joins'      => [
                 [
                     'table'      => 'events',
@@ -1988,7 +1988,7 @@ class Attribute extends AppModel
                 );
                 unset($eventIds);
             }
-    
+
             $this->attachTagsToAttributes($batch, $options);
     
             // per-attribute pipeline
