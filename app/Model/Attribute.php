@@ -1802,13 +1802,36 @@ class Attribute extends AppModel
      */
     public function fetchAttributes(array $user, array $options = [], &$result_count = false, $real_count = false, &$skipped_item_count = false)
     {
-        // Build ACL + any pre-injected tag/extra conditions
+        if (!empty($options['list'])) {
+            if (!empty($options['event_ids'])) {
+                return $this->find('column', [
+                    'fields'     => ['Attribute.event_id'],
+                    'conditions' => $this->buildConditions($user) + (array)($options['conditions'] ?? []),
+                    'recursive'  => -1,
+                    'contain'    => ['Event','Object'],
+                    'order'      => false,
+                    'group'      => false,
+                    'unique'     => true
+                ]);
+            }
+            return $this->find('list', [
+                'fields'     => ['Attribute.event_id','Attribute.event_id'],
+                'conditions' => $this->buildConditions($user) + (array)($options['conditions'] ?? []),
+                'recursive'  => -1,
+                'contain'    => ['Event','Object'],
+                'order'      => false
+            ]);
+        }
+    
         $conditions = $this->buildConditions($user);
         if (!empty($options['conditions'])) {
             $conditions['AND'][] = $options['conditions'];
         }
     
-        // Enforce deleted flag
+        if (empty($options['flatten'])) {
+            $conditions['AND'][] = ['Attribute.object_id' => 0];
+        }
+    
         if (isset($options['deleted']) && $options['deleted'] === 'only') {
             $conditions['AND']['Attribute.deleted'] = 1;
         } elseif (!$user['Role']['perm_sync'] || empty($options['deleted'])) {
@@ -1816,75 +1839,101 @@ class Attribute extends AppModel
         }
     
         $params = [
-            'fields'     => [
-                'Attribute.*',
-                'Event.*',
-                'Object.id', 'Object.distribution', 'Object.sharing_group_id'
-            ],
+            'fields'     => $options['fields']
+                              ?? [
+                                  'Attribute.*',
+                                  'Event.id','Event.info','Event.org_id','Event.orgc_id','Event.uuid','Event.user_id',
+                                  'Object.id','Object.distribution','Object.sharing_group_id'
+                                ],
             'conditions' => $conditions,
-            'contain' => false,
             'recursive'  => -1,
+            'contain'    => false,
             'joins'      => [
-                // a STRAIGHT so attributes → events, but retaining join order
+
                 [
                     'table'      => 'events',
                     'alias'      => 'Event',
-                    'type'       => 'STRAIGHT',
+                    'type'       => 'STRAIGHT_JOIN',
                     'conditions' => ['Event.id = Attribute.event_id']
                 ],
-                // a normal LEFT JOIN to objects
                 [
                     'table'      => 'objects',
                     'alias'      => 'Object',
                     'type'       => 'LEFT',
                     'conditions' => ['Object.id = Attribute.object_id']
-                ]
-            ],
+                ],
+            ]
         ];
     
-        // Optionally include ShadowAttribute proposals
-        if (!empty($options['includeProposals'])) {
+        if (!empty($options['allow_proposal_blocking'])
+            && Configure::read('MISP.proposals_block_attributes')
+        ) {
             $params['joins'][] = [
                 'table'      => 'shadow_attributes',
                 'alias'      => 'ShadowAttribute',
                 'type'       => 'LEFT',
                 'conditions' => [
-                    'ShadowAttribute.old_id = Attribute.id',
-                    'ShadowAttribute.deleted = 0'
+                    'ShadowAttribute.old_id       = Attribute.id',
+                    'ShadowAttribute.deleted      = 0',
+                    'OR' => [
+                        'ShadowAttribute.proposal_to_delete' => 1,
+                        'ShadowAttribute.to_ids'             => 0
+                    ]
+                ],
+                'fields'     => [
+                    'ShadowAttribute.id',
+                    'ShadowAttribute.value',
+                    'ShadowAttribute.type',
+                    'ShadowAttribute.category',
+                    'ShadowAttribute.to_ids'
                 ]
             ];
         }
+
+        if (!empty($options['includeProposals'])) {
+            $params['joins'][] = [
+                'table'      => 'shadow_attributes',
+                'alias'      => 'ShadowAttribute',
+                'type'       => 'LEFT',
+                'conditions' => ['ShadowAttribute.old_id = Attribute.id','ShadowAttribute.deleted = 0']
+            ];
+        }
     
-        //  Paging controls
         if (isset($options['page']))   $params['page']   = $options['page'];
         if (isset($options['limit']))  $params['limit']  = $options['limit'];
         if (isset($options['offset'])) $params['offset'] = $options['offset'];
     
-        // Ordering
+        //
+        // 7) Ordering
+        //
         if (!empty($options['order'])) {
             $params['order'] = $this->findOrder(
                 $options['order'],
                 'Attribute',
                 [
-                    'Attribute' => [
-                        'id','event_id','object_id','type','category',
-                        'value','distribution','timestamp','object_relation'
-                    ],
-                    'Event' => ['publish_timestamp'],
+                    'Attribute' => ['id','event_id','object_id','type','category','value','distribution','timestamp','object_relation'],
+                    'Event'     => ['publish_timestamp']
                 ]
             );
         } else {
             $params['order'] = [];
         }
+
+        if (array_key_exists('group', $options)) {
+            $params['group'] = $options['group'] ?: false;
+        }
+
+        $idx = $this->query("SHOW INDEX FROM attributes WHERE Key_name='deleted'");
+        if (!empty($idx)) {
+            $params['ignoreIndexHint'] = 'deleted';
+        }
     
-        // Prepare for bulk loop if no explicit limit
         $loop = empty($params['limit']);
         if ($loop) {
             $params['limit'] = 50000;
             $params['page']  = 1;
         }
     
-        // Real count if requested
         if ($result_count !== false && $real_count) {
             $cnt = $params;
             unset($cnt['limit'], $cnt['page']);
@@ -1894,9 +1943,11 @@ class Attribute extends AppModel
             }
         }
     
-        // Fetch in batches, attach tags & post-process
-        $allAttrs = [];
-        $skipped   = 0;
+        $all    = [];
+        $skipped = 0;
+        $eventTags = [];
+        $sgids     = $this->SharingGroup->authorizedIds($user);
+    
         do {
             $batch = $this->find('all', $params);
             if (empty($batch)) {
@@ -1906,14 +1957,96 @@ class Attribute extends AppModel
                 $result_count += count($batch);
             }
     
-            // re-attach AttributeTag data if still needed
-            $this->attachTagsToAttributes($batch, $options);
-    
-            foreach ($batch as $attr) {
-                // …your existing per-attribute logic (context, sightings, correlations, warninglist, decay, etc.)…
-                $allAttrs[] = $attr;
+            // includeContext
+            if (!empty($options['includeContext'])) {
+                $eventIds = [];
+                foreach ($batch as $r) {
+                    $eventIds[$r['Attribute']['event_id']] = true;
+                }
+                $eventsById = $this->__fetchEventsForAttributeContext(
+                    $user,
+                    array_keys($eventIds),
+                    !empty($options['includeAllTags'])
+                );
+                unset($eventIds);
             }
     
+            // re-attach AttributeTags
+            $this->attachTagsToAttributes($batch, $options);
+    
+            // per-attribute pipeline
+            foreach ($batch as $attr) {
+                if (!empty($options['includeContext'])) {
+                    $attr['Event'] = $eventsById[$attr['Attribute']['event_id']];
+                }
+                if (!empty($options['includeSightings'])) {
+                    $tmp = $attr['Attribute'];
+                    $tmp['Event'] = $attr['Event'];
+                    $attr['Attribute']['Sighting'] =
+                        $this->Sighting->attachToEvent($tmp, $user, $tmp['id']);
+                }
+                if (!empty($options['includeCorrelations'])) {
+                    $fields = ['id','event_id','object_id','object_relation','category','type','value','uuid','timestamp','distribution','sharing_group_id','to_ids','comment'];
+                    $attr['Attribute']['RelatedAttribute'] =
+                        $this->Correlation->getRelatedAttributes($user, $sgids, $attr['Attribute'], $fields, true);
+                }
+                if (!empty($options['enforceWarninglist'])
+                    && !$this->Warninglist->filterWarninglistAttribute($attr['Attribute'])
+                ) {
+                    $skipped++;
+                    continue;
+                }
+                if (!empty($options['includeEventTags'])) {
+                    $attr = $this->__attachEventTagsToAttributes($eventTags, $attr, $options);
+                }
+                if (!empty($options['includeWarninglistHits'])) {
+                    $attr['Attribute'] =
+                        $this->Warninglist->checkForWarning($attr['Attribute']);
+                }
+                if (!empty($options['includeAttributeUuid'])
+                    || !empty($options['includeEventUuid'])
+                ) {
+                    $attr['Attribute']['event_uuid'] = $attr['Event']['uuid'];
+                }
+                if (!empty($options['withAttachments'])
+                    && $this->typeIsAttachment($attr['Attribute']['type'])
+                ) {
+                    $attr['Attribute']['data'] =
+                        $this->base64EncodeAttachment($attr['Attribute']);
+                }
+                if (!empty($options['includeDecayScore'])) {
+                    $this->DecayingModel = ClassRegistry::init('DecayingModel');
+                    $full = !empty($options['includeFullModel']) ? 1 : 0;
+                    if (empty($attr['Attribute']['AttributeTag'])) {
+                        $attr['Attribute']['AttributeTag'] =
+                            $attr['AttributeTag'] ?? [];
+                        $attr['Attribute']['EventTag'] =
+                            $attr['EventTag'] ?? [];
+                    }
+                    $attr['Attribute'] = $this->DecayingModel
+                        ->attachScoresToAttribute($user, $attr['Attribute'], $options['decayingModel'], $options['modelOverrides'], $full);
+                    unset($attr['Attribute']['AttributeTag'], $attr['Attribute']['EventTag']);
+                    if (!empty($options['excludeDecayed'])) {
+                        $allDecayed = true;
+                        foreach ($attr['Attribute']['decay_score'] as $ds) {
+                            $allDecayed = $allDecayed && $ds['decayed'];
+                        }
+                        if ($allDecayed) {
+                            $skipped++;
+                            continue;
+                        }
+                    }
+                }
+                if (!empty($options['includeGalaxy'])) {
+                    $ma = $this->Event->massageTags($user, $attr, 'Attribute');
+                    $me = $this->Event->massageTags($user, $attr, 'Event');
+                    $ma['Galaxy'] = array_merge_recursive($ma['Galaxy'], $me['Galaxy']);
+                    $attr = $ma;
+                }
+                $all[] = $attr;
+            }
+    
+            // exit batching if done
             if ($loop && count($batch) < $params['limit']) {
                 break;
             }
@@ -1923,12 +2056,10 @@ class Attribute extends AppModel
         } while ($loop);
     
         $skipped_item_count = $skipped;
-        return $allAttrs;
+        return $all;
     }
-    
-    
-    
 
+    
     /**
      * @param array $user
      * @param array $eventIds
