@@ -1802,36 +1802,28 @@ class Attribute extends AppModel
      */
     public function fetchAttributes(array $user, array $options = [], &$result_count = false, $real_count = false, &$skipped_item_count = false)
     {
-        // 1) Build ACL + any pre-injected tag/extra conditions
+        // Build ACL + any pre-injected tag/extra conditions
         $conditions = $this->buildConditions($user);
         if (!empty($options['conditions'])) {
             $conditions['AND'][] = $options['conditions'];
         }
     
-        // 2) Enforce deleted flag
+        // Enforce deleted flag
         if (isset($options['deleted']) && $options['deleted'] === 'only') {
             $conditions['AND']['Attribute.deleted'] = 1;
         } elseif (!$user['Role']['perm_sync'] || empty($options['deleted'])) {
             $conditions['AND']['Attribute.deleted'] = 0;
         }
     
-        // 3) Prevent Cake from auto-joining any associations
-        $this->unbindModel([
-            'belongsTo' => ['Event', 'Object'],
-            'hasMany'   => ['AttributeTag', 'ShadowAttribute']
-        ], false);
-    
-        // 4) Assemble the manual-join parameters
         $params = [
             'fields'     => [
                 'Attribute.*',
-                'Event.id',  'Event.info',  'Event.org_id',  'Event.orgc_id',
-                'Event.uuid','Event.user_id',
+                'Event.*',
                 'Object.id', 'Object.distribution', 'Object.sharing_group_id'
             ],
             'conditions' => $conditions,
+            'contain' => false,
             'recursive'  => -1,
-            'contain'    => false,  // no Containable joins
             'joins'      => [
                 // a STRAIGHT so attributes → events, but retaining join order
                 [
@@ -1850,7 +1842,7 @@ class Attribute extends AppModel
             ],
         ];
     
-        // 5) Optionally include ShadowAttribute proposals
+        // Optionally include ShadowAttribute proposals
         if (!empty($options['includeProposals'])) {
             $params['joins'][] = [
                 'table'      => 'shadow_attributes',
@@ -1863,12 +1855,12 @@ class Attribute extends AppModel
             ];
         }
     
-        // 6) Paging controls
+        //  Paging controls
         if (isset($options['page']))   $params['page']   = $options['page'];
         if (isset($options['limit']))  $params['limit']  = $options['limit'];
         if (isset($options['offset'])) $params['offset'] = $options['offset'];
     
-        // 7) Ordering
+        // Ordering
         if (!empty($options['order'])) {
             $params['order'] = $this->findOrder(
                 $options['order'],
@@ -1885,14 +1877,14 @@ class Attribute extends AppModel
             $params['order'] = [];
         }
     
-        // 8) Prepare for bulk loop if no explicit limit
+        // Prepare for bulk loop if no explicit limit
         $loop = empty($params['limit']);
         if ($loop) {
             $params['limit'] = 50000;
             $params['page']  = 1;
         }
     
-        // 9) Real count if requested
+        // Real count if requested
         if ($result_count !== false && $real_count) {
             $cnt = $params;
             unset($cnt['limit'], $cnt['page']);
@@ -1902,7 +1894,7 @@ class Attribute extends AppModel
             }
         }
     
-        // 10) Fetch in batches, attach tags & post-process
+        // Fetch in batches, attach tags & post-process
         $allAttrs = [];
         $skipped   = 0;
         do {
@@ -3219,7 +3211,6 @@ class Attribute extends AppModel
             }
             $incrementTotalBy = $loop ? 0 : 1;
             $results = $this->fetchAttributes($user, $params, $elementCounter, false, $skippedElementsCounter);
-
             $resultCount = count($results);
             $totalCount = $totalCount + $elementCounter;
             $elementCounter = false; // do not call `count` again
