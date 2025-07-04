@@ -1837,7 +1837,35 @@ class Attribute extends AppModel
         } elseif (!$user['Role']['perm_sync'] || empty($options['deleted'])) {
             $conditions['AND']['Attribute.deleted'] = 0;
         }
+        $flags = [
+            'withAttachments','includeSightings','includeCorrelations',
+            'includeContext','includeEventTags','includeWarninglistHits',
+            'enforceWarninglist','includeDecayScore','decayingModel',
+            'includeAttributeUuid','includeEventUuid','includeGalaxy',
+            'includeProposals','allow_proposal_blocking'
+        ];
+            foreach ($flags as $f) {
+            if (!isset($options[$f])) {
+                $options[$f] = false;
+            }
+        }
+
+        if (!isset($options['modelOverrides'])) {
+            $options['modelOverrides'] = [];
+        }
+          
+        if (isset($options['score'])) {
+            $options['modelOverrides']['threshold'] = $options['score'];
+        }
+        if ($options['excludeDecayed']) {
+            $options['includeDecayScore'] = true;
+        }
+        if ($options['includeDecayScore']) {
+            $options['includeEventTags'] = true;
+        }
     
+        $sgids     = $this->SharingGroup->authorizedIds($user);
+
         $params = [
             'fields'     => $options['fields']
                               ?? [
@@ -1849,12 +1877,21 @@ class Attribute extends AppModel
             'recursive'  => -1,
             'contain'    => false,
             'joins'      => [
-
                 [
                     'table'      => 'events',
                     'alias'      => 'Event',
                     'type'       => 'STRAIGHT',
-                    'conditions' => ['Event.id = Attribute.event_id']
+                    'conditions' => [
+                    'Event.id = Attribute.event_id',
+                    'Event.org_id'                => $user['org_id'],
+                    'Event.distribution IN'       => [1,2,3],
+                    [
+                        'OR' => [
+                        ['Event.distribution'      => 4],
+                        ['Event.sharing_group_id IN' => $sgids]
+                        ]
+                    ]
+                    ]
                 ],
                 [
                     'table'      => 'objects',
@@ -1864,48 +1901,32 @@ class Attribute extends AppModel
                 ],
             ]
         ];
-    
-        if (!empty($options['allow_proposal_blocking'])
-            && Configure::read('MISP.proposals_block_attributes')
-        ) {
-            $params['joins'][] = [
-                'table'      => 'shadow_attributes',
-                'alias'      => 'ShadowAttribute',
-                'type'       => 'LEFT',
-                'conditions' => [
-                    'ShadowAttribute.old_id       = Attribute.id',
-                    'ShadowAttribute.deleted      = 0',
-                    'OR' => [
-                        'ShadowAttribute.proposal_to_delete' => 1,
-                        'ShadowAttribute.to_ids'             => 0
-                    ]
-                ],
-                'fields'     => [
-                    'ShadowAttribute.id',
-                    'ShadowAttribute.value',
-                    'ShadowAttribute.type',
-                    'ShadowAttribute.category',
-                    'ShadowAttribute.to_ids'
-                ]
-            ];
-        }
+
+        if (array_key_exists('group',$options)) $params['group']  = $options['group'] ?: false;
 
         if (!empty($options['includeProposals'])) {
-            $params['joins'][] = [
-                'table'      => 'shadow_attributes',
-                'alias'      => 'ShadowAttribute',
-                'type'       => 'LEFT',
-                'conditions' => ['ShadowAttribute.old_id = Attribute.id','ShadowAttribute.deleted = 0']
-            ];
+            $this->bindModel([
+                'hasMany' => [
+                    'ShadowAttribute' => [
+                        'className'  => 'ShadowAttribute',
+                        'foreignKey' => 'old_id',
+                        'conditions' => ['ShadowAttribute.deleted' => 0],
+                        'fields'     => [
+                            'id','old_id','event_id','type','category','value1','value2',
+                            'to_ids','uuid','org_id','event_org_id','comment','timestamp',
+                            'proposal_to_delete','disable_correlation','value'
+                        ]
+                    ]
+                ]
+            ], false);
+        
+            $params['contain'] = ['ShadowAttribute'];
         }
     
         if (isset($options['page']))   $params['page']   = $options['page'];
         if (isset($options['limit']))  $params['limit']  = $options['limit'];
         if (isset($options['offset'])) $params['offset'] = $options['offset'];
     
-        //
-        // 7) Ordering
-        //
         if (!empty($options['order'])) {
             $params['order'] = $this->findOrder(
                 $options['order'],
@@ -1917,10 +1938,6 @@ class Attribute extends AppModel
             );
         } else {
             $params['order'] = [];
-        }
-
-        if (array_key_exists('group', $options)) {
-            $params['group'] = $options['group'] ?: false;
         }
 
         $idx = $this->query("SHOW INDEX FROM attributes WHERE Key_name='deleted'");
@@ -1942,11 +1959,23 @@ class Attribute extends AppModel
                 return [];
             }
         }
+
+        if (($options['enforceWarninglist'] || $options['includeWarninglistHits']) && !isset($this->Warninglist)) {
+            $this->Warninglist = ClassRegistry::init('Warninglist');
+        }
+
+        if (!empty($options['includeSightings']) && !isset($this->Sighting)) {
+            $this->Sighting = ClassRegistry::init('Sighting');
+        }
+        
+        if (!empty($options['includeCorrelations']) && !isset($this->Correlation)) {
+            $this->Correlation = ClassRegistry::init('Correlation');
+        }
+        
     
         $all    = [];
         $skipped = 0;
         $eventTags = [];
-        $sgids     = $this->SharingGroup->authorizedIds($user);
     
         do {
             $batch = $this->find('all', $params);
@@ -1957,7 +1986,6 @@ class Attribute extends AppModel
                 $result_count += count($batch);
             }
     
-            // includeContext
             if (!empty($options['includeContext'])) {
                 $eventIds = [];
                 foreach ($batch as $r) {
@@ -1971,7 +1999,6 @@ class Attribute extends AppModel
                 unset($eventIds);
             }
     
-            // re-attach AttributeTags
             $this->attachTagsToAttributes($batch, $options);
     
             // per-attribute pipeline
@@ -2042,6 +2069,14 @@ class Attribute extends AppModel
                     $me = $this->Event->massageTags($user, $attr, 'Event');
                     $ma['Galaxy'] = array_merge_recursive($ma['Galaxy'], $me['Galaxy']);
                     $attr = $ma;
+                }
+
+                if (!empty($options['allow_proposal_blocking'])
+                    && Configure::read('MISP.proposals_block_attributes')
+                    && $this->__blockAttributeViaProposal($attr)
+                ) {
+                    $skipped++;
+                    continue;
                 }
                 $all[] = $attr;
             }
