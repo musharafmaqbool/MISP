@@ -5708,7 +5708,7 @@ class Server extends AppModel
                 'cveurl' => array(
                     'level' => 1,
                     'description' => __('Turn Vulnerability type attributes into links linking to the provided CVE lookup'),
-                    'value' => 'https://cve.circl.lu/cve/',
+                    'value' => 'https://vulnerability.circl.lu/vuln/',
                     'test' => 'testForEmpty',
                     'type' => 'string',
                     'cli_only' => 1
@@ -5716,7 +5716,7 @@ class Server extends AppModel
                 'cweurl' => array(
                     'level' => 1,
                     'description' => __('Turn Weakness type attributes into links linking to the provided CWE lookup'),
-                    'value' => 'https://cve.circl.lu/cwe/',
+                    'value' => 'https://vulnerability.circl.lu/cwes/',
                     'test' => 'testForEmpty',
                     'type' => 'string',
                     'cli_only' => 1
