@@ -532,13 +532,21 @@ class AppModel extends Model
                 $notEmpty = false;
                 $indeces = [
                     'idx_evt_acl' => '(distribution, sharing_group_id)',
-                    'idx_evt_org' => '(org_id)',
                     'idx_evt_ts_pub' => '(timestamp, published)',
                     'idx_evt_id_acl' => '(id, org_id, distribution, sharing_group_id)',
+                ];
+                $indeces_to_delete = [
+                    'sharing_group_id'
                 ];
                 foreach ($indeces as $index => $data) {
                     if (!$this->checkNamedIndexExists('events', $index)) {
                         $temp .= " ADD INDEX $index $data,";
+                        $notEmpty = true;
+                    }
+                }
+                foreach ($indeces_to_delete as $index) {
+                    if ($this->checkNamedIndexExists('events', $index)) {
+                        $temp .= " DROP INDEX $index,";
                         $notEmpty = true;
                     }
                 }
@@ -561,9 +569,24 @@ class AppModel extends Model
                     'idx_attr_evt_dist' => '(event_id, distribution)',
                     'idx_attr_objrel_acl' => '(object_relation(32), event_id, distribution, sharing_group_id, deleted)',
                 ];
+                $indeces_to_delete = [
+                    'deleted',
+                    'value1',
+                    'value2',
+                    'type',
+                    'event_id',
+                    'object_id',
+                    'object_relation'
+                ];
                 foreach ($indeces as $index => $data) {
                     if (!$this->checkNamedIndexExists('attributes', $index)) {
                         $temp .= " ADD INDEX $index $data,";
+                        $notEmpty = true;
+                    }
+                }
+                foreach ($indeces_to_delete as $index) {
+                    if ($this->checkNamedIndexExists('attributes', $index)) {
+                        $temp .= " DROP INDEX $index,";
                         $notEmpty = true;
                     }
                 }
@@ -578,12 +601,23 @@ class AppModel extends Model
                 $indeces = [
                     'idx_obj_acl' => '(event_id, distribution, sharing_group_id, deleted)',
                     'idx_obj_id_acl' => '(id, event_id, distribution)',
-                    'idx_obj_meta' => '(' . $this->dbiq() . 'meta-category' . $this->dbiq() . '(16), timestamp)',
-                    'idx_obj_evt_id' => '(event_id)',
+                    'idx_obj_meta' => '(' . $this->dbiq() . 'meta-category' . $this->dbiq() . '(16), timestamp)'
+                ];
+                $indeces_to_delete = [
+                    'event_id',
+                    'distribution',
+                    'sharing_group_id',
+                    'meta-category'
                 ];
                 foreach ($indeces as $index => $data) {
                     if (!$this->checkNamedIndexExists('objects', $index)) {
                         $temp .= " ADD INDEX $index $data,";
+                        $notEmpty = true;
+                    }
+                }
+                foreach ($indeces_to_delete as $index) {
+                    if ($this->checkNamedIndexExists('objects', $index)) {
+                        $temp .= " DROP INDEX $index,";
                         $notEmpty = true;
                     }
                 }
