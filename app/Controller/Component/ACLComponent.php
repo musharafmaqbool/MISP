@@ -100,7 +100,8 @@ class ACLComponent extends Component
             'view' => ['perm_auth'],
         ],
         'benchmarks' => [
-            'index' => []
+            'index' => [],
+            'sqlMetrics' => []
         ],
         'bookmarks' => [
             'add' => ['*'],
@@ -147,6 +148,7 @@ class ACLComponent extends Component
             'index' => [],
             'add' => [],
             'edit' => [],
+            'executeRule' => [],
             'delete' => [],
             'view' => []
         ],

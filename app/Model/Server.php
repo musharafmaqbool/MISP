@@ -7918,6 +7918,27 @@ class Server extends AppModel
                     'test' => 'testBool',
                     'type' => 'boolean'
                 ],
+                'Benchmarking_log_query_metrics' => [
+                    'level' => 2,
+                    'description' => __('Enable the logging of SQL query metrics. This setting is required for all slow_log features to work.'),
+                    'value' => false,
+                    'test' => 'testBool',
+                    'type' => 'boolean'
+                ],
+                'Benchmarking_slow_log_threshold' => [
+                    'level' => 2,
+                    'description' => __('The duration of a query to be considered a slow query. Default: 5000 (=5s)'),
+                    'value' => 5000,
+                    'test' => 'testForEmpty',
+                    'type' => 'numeric'
+                ],
+                'Benchmarking_slow_query_retention' => [
+                    'level' => 2,
+                    'description' => __('The retention of slow query log entries in seconds. Default: 259200 (=3 days)'),
+                    'value' => 259200,
+                    'test' => 'testForEmpty',
+                    'type' => 'numeric'
+                ],
                 'Enrichment_services_enable' => array(
                     'level' => 0,
                     'description' => __('Enable/disable the enrichment services'),

@@ -120,4 +120,54 @@ class BenchmarksController extends AppController
         $this->set('filters', $filters);
     }
 
+    public function sqlMetrics()
+    {
+        $params = $this->IndexFilter->harvestParameters([
+            'controller',
+            'action',
+            'limit',
+            'page'
+        ]);
+        $redis = $this->User->setupRedis();
+        $entries = [];
+        $cursor = null;
+        do {
+            $results = $redis->scan($cursor, 'misp:slowlog:*', 1000);
+            if ($results !== false) {
+                foreach ($results as $key) {
+                    $raw = $redis->get($key);
+                    if ($raw !== false) {
+                        $pipePos = strpos($raw, '|');
+                        if ($pipePos !== false) {
+                            $duration = (float) substr($raw, 0, $pipePos);
+                            $sql = substr($raw, $pipePos + 1);
+                            $controller = 'Unknown';
+                            $action = 'Unknown';
+                            if (preg_match('/(\w+)\s*::\s*(\w+)/', $sql, $matches)) {
+                                $controller = strtolower($matches[1]);
+                                $action = strtolower($matches[2]);
+                            }
+                            if (!empty($params['controller']) && $params['controller'] !== $controller) {
+                                continue;
+                            }
+                            if (!empty($params['action']) && $params['action'] !== $action) {
+                                continue;
+                            }
+                            $entries[] = ['duration' => $duration, 'sql' => $sql, 'controller' => $controller, $action => $action, 'key' => $key];
+                        }
+                    }
+                }
+            }
+
+        } while ($cursor !== 0 && $cursor !== null);
+        usort($entries, fn($a, $b) => $b['duration'] <=> $a['duration']);
+        $start = 0;
+        $limit = !empty($params['limit']) && is_numeric($params['limit']) && $params['limit'] > 0 ? (int)$params['limit'] : 100;
+
+        if (!empty($params['page']) && is_numeric($params['page']) && $params['page'] > 0) {
+            $start = ($params['page'] - 1) * $limit;
+        }
+        return $this->RestResponse->viewData(array_slice($entries, $start, $limit));
+    }
+
 }
