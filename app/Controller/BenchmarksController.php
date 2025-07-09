@@ -170,4 +170,31 @@ class BenchmarksController extends AppController
         return $this->RestResponse->viewData(array_slice($entries, $start, $limit));
     }
 
+    public function purgeSqlMetrics()
+    {
+        if ($this->request->is('post')) {
+            $redis = $this->User->setupRedis();
+            $cursor = null;
+            do {
+                $keys = $redis->scan($cursor, 'misp:slowlog:*', 1000);
+                if ($keys !== false && count($keys) > 0) {
+                    $redis->del($keys);
+                }
+            } while ($cursor !== 0 && $cursor !== null);
+            $message = __('SQL metrics purged successfully.');
+            if ($this->_isRest()) {
+                return $this->RestResponse->saveSuccessResponse('Benchmarks', 'purgeSqlMetrics', false, $this->response->type(), $message);
+            } else {
+                $this->flash->success($message);
+                $this->redirect(Router::url($this->referer(), true));
+            }
+        } else {
+            $this->set('id', null);
+            $this->set('title', __('Purge SQL Metrics'));
+            $this->set('question', __('Are you sure you want to purge the SQL slow log metrics?'));
+            $this->set('actionName', __('Purge'));
+            $this->layout = false;
+            $this->render('/genericTemplates/confirm');
+        }
+    }
 }

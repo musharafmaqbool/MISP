@@ -101,6 +101,7 @@ class ACLComponent extends Component
         ],
         'benchmarks' => [
             'index' => [],
+            'purgeSqlMetrics' => [],
             'sqlMetrics' => []
         ],
         'bookmarks' => [
