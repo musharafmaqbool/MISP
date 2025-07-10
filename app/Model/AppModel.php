@@ -646,6 +646,31 @@ class AppModel extends Model
                     $sqlArray[] = $temp;
                 }
                 break;
+            case 'highPerformanceIndexingConnectorTags':
+                $indeces = [
+                    'event_tags' => [
+                        'idx_event_tags_event_tag' => '(event_id, tag_id)'
+                    ],
+                    'attribute_tags' => [
+                        'idx_attr_tags_event_tag' => '(event_id, tag_id)',
+                        'idx_attr_tags_attr_tag' => '(attribute_id, tag_id)'
+                    ]
+                ];
+                foreach ($indeces as $table => $indexes) {
+                    $temp = "ALTER TABLE $table";
+                    $notEmpty = false;
+                    foreach ($indexes as $index => $data) {
+                        if (!$this->checkNamedIndexExists($table, $index)) {
+                            $temp .= " ADD INDEX $index $data,";
+                            $notEmpty = true;
+                        }
+                    }
+                    if ($notEmpty) {
+                        $temp = rtrim($temp, ',') . " ;";
+                        $sqlArray[] = $temp;
+                    }
+                }
+                break;
             case 'highPerformanceLogSearchIndexing':
                 $temp = "ALTER TABLE logs";
                 $notEmpty = false;
