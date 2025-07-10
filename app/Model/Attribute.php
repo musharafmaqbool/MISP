@@ -1180,7 +1180,7 @@ class Attribute extends AppModel
                 }
 
                 // for attributes
-                if ($options['scope'] === 'all' || $options['scope'] === 'Attribute') {
+                if (empty($options['skip_neg']) && ($options['scope'] === 'all' || $options['scope'] === 'Attribute')) {
                     $attrFieldNeg = $options['scope'] === 'Event'
                                 ? 'AT2.event_id = Event.id' : 'AT2.attribute_id = Attribute.id';
                     $conditions['AND'][] =
