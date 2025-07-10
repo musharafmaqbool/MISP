@@ -607,7 +607,7 @@ class AppModel extends Model
                     'event_id',
                     'distribution',
                     'sharing_group_id',
-                    'meta-category'
+                    $this->dbiq() . 'meta-category' . $this->dbiq()
                 ];
                 foreach ($indeces as $index => $data) {
                     if (!$this->checkNamedIndexExists('objects', $index)) {
