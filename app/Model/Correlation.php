@@ -211,7 +211,7 @@ class Correlation extends AppModel
         $attributeConditions = [
             'Attribute.deleted' => 0,
             'Attribute.disable_correlation' => 0,
-            'Attribute.type NOT IN' => Attribute::NON_CORRELATING_TYPES,
+            'Attribute.type NOT IN' => MispAttribute::NON_CORRELATING_TYPES,
         ];
         if ($eventId) {
             $attributeConditions['Attribute.event_id'] = $eventId;
@@ -477,7 +477,7 @@ class Correlation extends AppModel
                 continue; // skip already blocked values when doing full correlation
             }
             $conditions = [
-                'Attribute.type NOT IN' => Attribute::NON_CORRELATING_TYPES,
+                'Attribute.type NOT IN' => MispAttribute::NON_CORRELATING_TYPES,
                 'Attribute.event_id !=' => $a['Attribute']['event_id'],
                 'Attribute.disable_correlation' => 0,
                 'Event.disable_correlation' => 0,
