@@ -98,7 +98,7 @@ class AttributesController extends AppController
         }
         $params['conditions']['AND'][] = $this->MispAttribute->buildConditions($user);
         $paramArray = [
-            'value' , 'type', 'category', 'org_id', 'tags', 'to_ids', 'first_seen', 'last_seen', 'search_token', 'uuid', 'page', 'limit', 'sort', 'direction', 'object_relation'
+            'value' , 'type', 'category', 'org', 'tags', 'to_ids', 'first_seen', 'last_seen', 'search_token', 'uuid', 'page', 'limit', 'sort', 'direction', 'object_relation'
         ];
         $filterData = array(
             'request' => $this->request,
@@ -223,10 +223,10 @@ class AttributesController extends AppController
             foreach ($request_filters as $k => $v) {
                 if (is_array($v)) {
                     foreach ($v as $vv) {
-                        $export_filters .= $k . '[]:' . $vv . '/';
+                        $export_filters .= urlencode($k) . '[]:' . urlencode($vv) . '/';
                     }
                 } else {
-                    $export_filters .= $k . ':' . $v . '/';
+                    $export_filters .= urlencode($k) . ':' . urlencode($v) . '/';
                 }
             }
         }
