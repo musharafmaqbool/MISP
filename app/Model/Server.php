@@ -5711,7 +5711,7 @@ class Server extends AppModel
                 'cveurl' => array(
                     'level' => 1,
                     'description' => __('Turn Vulnerability type attributes into links linking to the provided CVE lookup'),
-                    'value' => 'https://cve.circl.lu/cve/',
+                    'value' => 'https://vulnerability.circl.lu/vuln/',
                     'test' => 'testForEmpty',
                     'type' => 'string',
                     'cli_only' => 1
@@ -5719,7 +5719,7 @@ class Server extends AppModel
                 'cweurl' => array(
                     'level' => 1,
                     'description' => __('Turn Weakness type attributes into links linking to the provided CWE lookup'),
-                    'value' => 'https://cve.circl.lu/cwe/',
+                    'value' => 'https://vulnerability.circl.lu/cwes/',
                     'test' => 'testForEmpty',
                     'type' => 'string',
                     'cli_only' => 1
@@ -7920,6 +7920,27 @@ class Server extends AppModel
                     'value' => false,
                     'test' => 'testBool',
                     'type' => 'boolean'
+                ],
+                'Benchmarking_log_query_metrics' => [
+                    'level' => 2,
+                    'description' => __('Enable the logging of SQL query metrics. This setting is required for all slow_log features to work.'),
+                    'value' => false,
+                    'test' => 'testBool',
+                    'type' => 'boolean'
+                ],
+                'Benchmarking_slow_log_threshold' => [
+                    'level' => 2,
+                    'description' => __('The duration of a query to be considered a slow query. Default: 5000 (=5s)'),
+                    'value' => 5000,
+                    'test' => 'testForEmpty',
+                    'type' => 'numeric'
+                ],
+                'Benchmarking_slow_query_retention' => [
+                    'level' => 2,
+                    'description' => __('The retention of slow query log entries in seconds. Default: 259200 (=3 days)'),
+                    'value' => 259200,
+                    'test' => 'testForEmpty',
+                    'type' => 'numeric'
                 ],
                 'Enrichment_services_enable' => array(
                     'level' => 0,
