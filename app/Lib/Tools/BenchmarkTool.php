@@ -63,8 +63,13 @@ class BenchmarkTool
                 'endpoint' => $options['controller'] . '/' . $options['action'],
                 'user_agent' => $_SERVER['HTTP_USER_AGENT'],
                 'sql_queries' => $sql['count'],
+<<<<<<< HEAD
                 'sql_time' => $sql['time'],
                 'time' => (microtime(true) - $start_time),
+=======
+                'sql_time' => isset($options['sql_time']) ? $options['sql_time'] : $sql['time'],
+                'time' => (microtime(true) - $startTime),
+>>>>>>> 0947300f3 (fix: [benchmark] typo causing notice errors)
                 'memory' => (int)(memory_get_peak_usage(true) / 1024 / 1024),
                 //'date' => date('Y-m-d', strtotime("-3 days"))
                 'date' => date('Y-m-d')
