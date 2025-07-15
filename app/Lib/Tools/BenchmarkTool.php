@@ -66,7 +66,7 @@ class BenchmarkTool
                 'user_agent' => $_SERVER['HTTP_USER_AGENT'],
                 'sql_queries' => $sql['count'],
                 'sql_time' => isset($options['sql_time']) ? $options['sql_time'] : $sql['time'],
-                'time' => (microtime(true) - $start_time),
+                'time' => (microtime(true) - $startTime),
                 'memory' => (int)(memory_get_peak_usage(true) / 1024 / 1024),
                 //'date' => date('Y-m-d', strtotime("-3 days"))
                 'date' => date('Y-m-d')
