@@ -61,7 +61,7 @@ class BenchmarkTool
             $benchmarkData = [
                 'user' => $options['user'],
                 'endpoint' => $options['controller'] . '/' . $options['action'],
-                'user_agent' => $_SERVER['HTTP_USER_AGENT'],
+                'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'Unknown',
                 'sql_queries' => $sql['count'],
 <<<<<<< HEAD
                 'sql_time' => $sql['time'],
