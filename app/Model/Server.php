@@ -6105,7 +6105,7 @@ class Server extends AppModel
                 ],
                 'log_errors_ndjson' => [
                     'level' =>  self::SETTING_RECOMMENDED,
-                    'description' => __('Log errors in ndjson format additionally to error.log.'),
+                    'description' => __('Log errors in ndjson format additionally to error.log.)'),
                     'value' => false,
                     'test' => 'testBool',
                     'type' => 'boolean'
