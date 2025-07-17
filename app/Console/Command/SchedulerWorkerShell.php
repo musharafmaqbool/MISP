@@ -35,7 +35,8 @@ class SchedulerWorkerShell extends AppShell
             try {
                 $tasks = $this->Task->find('all', [
                     'conditions' => [
-                        'next_execution_time <=' => $now
+                        'next_execution_time <=' => $now,
+                        'enabled' => true
                     ]
                 ]);
             } catch (Exception $e) {
@@ -49,7 +50,7 @@ class SchedulerWorkerShell extends AppShell
                 try {
                     $this->processTask($task);
                 } catch (Exception $e) {
-                    CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - failed to process task ID {$task['id']}: " . $e->getMessage());
+                    $this->logMessage('error', $task['id'], "failed to process task: " . $e->getMessage());
                 }
             }
 
@@ -59,36 +60,47 @@ class SchedulerWorkerShell extends AppShell
 
     private function processTask(array $task)
     {
-        CakeLog::info("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - processing task: {$task['type']}");
-
-        [$model,  $action, $params] = explode(':', $task['type']);
+        $this->logMessage('info', $task['id'], "processing task: {$task['type']}");
 
         if ($task['process_id']) {
 
             $job = $this->Job->read(null, $task['process_id']);
 
             if ($job['Job']['status'] === Job::STATUS_RUNNING) {
-                CakeLog::info("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - job is already running for this task: {$task['process_id']}");
+                $this->logMessage('info', $task['id'], "job is already running for this task: {$task['process_id']}");
                 return;
             }
         }
 
         $this->setNextExecutionTime($task);
 
-        if ($model == 'Server') {
-            $this->runServerTask($task, $action, $params);
-        } elseif ($model == 'Feed') {
-            if ($action === 'fetch') {
-                $this->runFeedFetchTask($task, $action, $params);
-            } elseif ($action === 'cache') {
-                $this->runFeedCacheTask($task, $action, $params);
+        if ($task['type'] == 'Server') {
+            $this->runServerTask($task);
+        } elseif ($task['type'] == 'Feed') {
+            if ($task['action'] === 'fetch') {
+                $this->runFeedFetchTask($task);
+            } elseif ($task['action'] === 'cache') {
+                $this->runFeedCacheTask($task);
             } else {
-                CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - unknown action for Feed: {$action}");
+                $this->logMessage('error', $task['id'], "unknown action for Feed: {$task['action']}");
                 return;
             }
+        } elseif ($task['type'] == 'Workflow') {
+            $this->runWorkflowAdHoc($task);
         } else {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - unknown model: {$model}");
+            $this->logMessage('error', $task['id'], "unknown type: {$task['type']}");
             return;
+        }
+    }
+
+    private function logMessage(string $type, $taskId, string $message)
+    {
+        $this->Task->id = $taskId;
+        if ($type === 'error') {
+            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - Task ID: {$taskId} - {$message}");
+            $this->Task->saveField('message', $message);
+        } else {
+            CakeLog::info("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - Task ID: {$taskId} - {$message}");
         }
     }
 
@@ -107,72 +119,195 @@ class SchedulerWorkerShell extends AppShell
             $this->Task->id = $task['id'];
             $this->Task->saveField('next_execution_time', $task['next_execution_time']);
         } catch (Exception $e) {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - failed to save next execution time for Task ID: {$task['id']}. Error: " . $e->getMessage());
+            $this->logMessage('error', $task['id'], "failed to save next_execution_time. Error: " . $e->getMessage());
             return;
         }
     }
 
-    private function runServerTask($task, $action, $params)
+    private function runServerTask($task)
     {
-        if (!in_array($action, ['pull', 'push'], true)) {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - unknown action: {$action}");
+        if (!in_array($task['action'], ['pull', 'push', 'cache'], true)) {
+            $this->logMessage('error', $task['id'], "unknown action: {$task['action']}");
+            return;
         }
 
-        [$userId, $serverId, $technique] = explode(',', $params);
-
-        if (!is_numeric($userId)) {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - invalid parameters: expected numeric userId.");
-        }
-
-        if (!is_numeric($serverId) || $serverId === 'all') {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - invalid parameters: expected numeric serverId or `all`.");
-        }
-
-        if (!in_array($technique, ['full', 'incremental', 'pull_relevant_clusters'], true)) {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - invalid parameters: expected technique to be 'pull' or 'push'.");
-        }
-
-        $user = $this->User->getAuthUser($userId);
+        $user = $this->User->getAuthUser($task['user_id']);
         if (empty($user)) {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - user ID do not match an existing user.");
+            $this->logMessage('error', $task['id'], "user ID do not match an existing user.");
+            return;
         }
 
-        $jobId = $this->Job->createJob($user, Job::WORKER_DEFAULT, $action, "Server: $serverId",  ucfirst($action . 'ing.'));
+        [$serverId] = explode(',', $task['params']);
+
+        if (!is_numeric($serverId) && $serverId != 'all') {
+            $this->logMessage('error', $task['id'], "invalid parameters: expected numeric serverId or 'all'.");
+            return;
+        }
+
+        $jobId = $this->Job->createJob($user, Job::WORKER_DEFAULT, $task['action'], "Server: $serverId",  ucfirst($task['action'] . 'ing.'));
+
+        if ($serverId === 'all' && $task['action'] === 'pull') {
+            $this->enqueueServerPullAll($task, $user, $jobId);
+        } elseif (is_numeric($serverId) && $task['action'] === 'pull') {
+            $this->enqueueServerPullById($task, $user, $jobId);
+        } elseif ($serverId === 'all' && $task['action'] === 'push') {
+            $this->enqueueServerPushAll($task, $user, $jobId);
+        } elseif (is_numeric($serverId) && $task['action'] === 'push') {
+            $this->enqueueServerPushById($task, $user, $jobId);
+        } elseif ($serverId === 'all' && $task['action'] === 'cache') {
+            $this->enqueueServerCacheAll($task, $user, $jobId);
+        } elseif (is_numeric($serverId) && $task['action'] === 'cache') {
+            $this->enqueueServerCacheById($task, $user, $jobId);
+        } elseif ($task['action'] === 'pull' || $task['action'] === 'push') {
+            $this->logMessage('error', $task['id'], "invalid action for server task: {$task['action']}");
+            return;
+        }
+
+        $this->Task->save([
+            'id' => $task['id'],
+            'process_id' => $jobId,
+            'message' => 'OK'
+        ]);
+    }
+
+    public function enqueueServerPullById($task, $user, $jobId)
+    {
+        [$serverId, $technique] = explode(',', $task['params']);
+
+        if (!in_array($technique, ['full', 'update'], true)) {
+            $this->logMessage('error', $task['id'], "invalid parameters: expected technique to be 'full' or 'update'.");
+            return;
+        }
+
         $this->getBackgroundJobsTool()->enqueue(
             BackgroundJobsTool::DEFAULT_QUEUE,
             BackgroundJobsTool::CMD_SERVER,
             [
-                $action,
+                'pull',
                 $user['id'],
                 $serverId,
                 $technique,
-                $jobId,
+                $jobId
             ],
             true,
             $jobId
         );
 
-        $this->Task->id = $task['id'];
-        $this->Task->saveField('process_id', $jobId);
-
-        CakeLog::info("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - enqueued {$action} for Server ID: {$serverId} with Task ID: {$task['id']}");
+        $this->logMessage('info', $task['id'], "enqueued Server Pull for Server ID: {$serverId}.");
     }
 
-    private function runFeedFetchTask($task, $action, $params)
+    public function enqueueServerPullAll($task, $user, $jobId)
     {
-        [$userId, $feedId] = explode(',', $params);
+        [$serverId, $technique] = explode(',', $task['params']);
 
-        if (!is_numeric($userId)) {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - invalid parameters: expected numeric userId");
+        if (!in_array($technique, ['full', 'update'], true)) {
+            $this->logMessage('error', $task['id'], "invalid parameters: expected technique to be 'full' or 'update'.");
+            return;
         }
 
-        if (!is_numeric($feedId) || $feedId === 'all') {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - invalid parameters: expected numeric feedId or `all`.");
+        $this->getBackgroundJobsTool()->enqueue(
+            BackgroundJobsTool::DEFAULT_QUEUE,
+            BackgroundJobsTool::CMD_SERVER,
+            [
+                'pull',
+                $user['id'],
+                $technique,
+                $jobId
+            ],
+            true,
+            $jobId
+        );
+
+        $this->logMessage('info', $task['id'], "enqueued Server Pull for all servers.");
+    }
+
+    public function enqueueServerPushAll($task, $user, $jobId)
+    {
+        $this->getBackgroundJobsTool()->enqueue(
+            BackgroundJobsTool::DEFAULT_QUEUE,
+            BackgroundJobsTool::CMD_SERVER,
+            [
+                'pushAll',
+                $user['id'],
+                $jobId
+            ],
+            true,
+            $jobId
+        );
+
+        $this->logMessage('info', $task['id'], "enqueued Server Push for all servers.");
+    }
+
+    public function enqueueServerPushById($task, $user, $jobId)
+    {
+        [$serverId] = explode(',', $task['params']);
+
+        $this->getBackgroundJobsTool()->enqueue(
+            BackgroundJobsTool::DEFAULT_QUEUE,
+            BackgroundJobsTool::CMD_SERVER,
+            [
+                'push',
+                $user['id'],
+                $serverId,
+                $jobId
+            ],
+            true,
+            $jobId
+        );
+
+        $this->logMessage('info', $task['id'], "enqueued Server Push for Server ID: {$serverId}.");
+    }
+
+    public function enqueueServerCacheAll($task, $user, $jobId)
+    {
+        $this->getBackgroundJobsTool()->enqueue(
+            BackgroundJobsTool::DEFAULT_QUEUE,
+            BackgroundJobsTool::CMD_SERVER,
+            [
+                'cacheServerAll',
+                $user['id'],
+                $jobId
+            ],
+            true,
+            $jobId
+        );
+
+        $this->logMessage('info', $task['id'], "enqueued Server Push for all servers.");
+    }
+
+    public function enqueueServerCacheById($task, $user, $jobId)
+    {
+        [$serverId] = explode(',', $task['params']);
+
+        $this->getBackgroundJobsTool()->enqueue(
+            BackgroundJobsTool::DEFAULT_QUEUE,
+            BackgroundJobsTool::CMD_SERVER,
+            [
+                'push',
+                $user['id'],
+                $serverId,
+                $jobId
+            ],
+            true,
+            $jobId
+        );
+
+        $this->logMessage('info', $task['id'], "enqueued Server Push for Server ID: {$serverId}.");
+    }
+
+    private function runFeedFetchTask($task)
+    {
+        $feedId = $task['params'];
+
+        if (!is_numeric($feedId) && $feedId != 'all') {
+            $this->logMessage('error', $task['id'], "invalid parameters: expected numeric feedId or `all`.");
+            return;
         }
 
-        $user = $this->User->getAuthUser($userId);
+        $user = $this->User->getAuthUser($task['user_id']);
         if (empty($user)) {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - user ID do not match an existing user.");
+            $this->logMessage('error', $task['id'], "user ID do not match an existing user.");
+            return;
         }
 
         $jobId = $this->Job->createJob(
@@ -196,27 +331,28 @@ class SchedulerWorkerShell extends AppShell
             $jobId
         );
 
-        $this->Task->id = $task['id'];
-        $this->Task->saveField('process_id', $jobId);
+        $this->Task->save([
+            'id' => $task['id'],
+            'process_id' => $jobId,
+            'message' => 'OK'
+        ]);
 
-        CakeLog::info("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - enqueued {$action} for Feed ID: {$feedId} with Task ID: {$task['id']}");
+        $this->logMessage('info', $task['id'], "enqueued fetch for Feed ID: {$feedId}.");
     }
 
-    private function runFeedCacheTask($task, $action, $params)
+    private function runFeedCacheTask($task)
     {
-        [$userId, $scope] = explode(',', $params);
-
-        if (!is_numeric($userId)) {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - invalid parameters: expected numeric userId");
-        }
+        $scope = $task['params'];
 
         if (!in_array($scope, ['freetext', 'csv', 'misp', 'all'], true)) {
-            CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - invalid parameters: expected scope to be 'freetext', 'csv', 'misp' or 'all'.");
+            $this->logMessage('error', $task['id'], "invalid parameters: expected scope to be 'freetext', 'csv', 'misp' or 'all'.");
+            return;
         }
 
-        $user = $this->User->getAuthUser($userId);
+        $user = $this->User->getAuthUser($task['user_id']);
         if (empty($user)) {
-            CakeLog::error('User ID do not match an existing user.');
+            $this->logMessage('error', $task['id'], "user ID do not match an existing user.");
+            return;
         }
 
         $jobId = $this->Job->createJob(
@@ -240,9 +376,17 @@ class SchedulerWorkerShell extends AppShell
             $jobId
         );
 
-        $this->Task->id = $task['id'];
-        $this->Task->saveField('process_id', $jobId);
+        $this->Task->save([
+            'id' => $task['id'],
+            'process_id' => $jobId,
+            'message' => 'OK'
+        ]);
 
-        CakeLog::info("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - enqueued feed cache with scope {$scope} with Task ID: {$task['id']}");
+        $this->logMessage('info', $task['id'], "enqueued cache for Feed with scope: {$scope}.");
+    }
+
+    public function runWorkflowAdHoc($task)
+    {
+        throw new NotImplementedException("Ad-hoc workflows are not implemented yet.");
     }
 }
