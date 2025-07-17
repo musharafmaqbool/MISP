@@ -283,7 +283,7 @@ class SchedulerWorkerShell extends AppShell
             BackgroundJobsTool::DEFAULT_QUEUE,
             BackgroundJobsTool::CMD_SERVER,
             [
-                'push',
+                'cacheServer',
                 $user['id'],
                 $serverId,
                 $jobId
