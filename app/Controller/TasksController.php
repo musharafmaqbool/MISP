@@ -36,6 +36,19 @@ class TasksController extends AppController
         if ($this->IndexFilter->isRest()) {
             return $this->restResponsePayload;
         }
+
+        $workers = $this->Task->getBackgroundJobsTool()->getWorkers();
+
+        $schedulerEnabled = false;
+        foreach ($workers as $worker) {
+            if ($worker->queue() === BackgroundJobsTool::SCHEDULER_QUEUE) {
+                $schedulerEnabled = true;
+                break;
+            }
+        }
+
+        $this->set('schedulerEnabled', $schedulerEnabled);
+
     }
 
     public function toggleEnabled($id)
@@ -116,7 +129,7 @@ class TasksController extends AppController
                             $task['Task']['server_id'] = $params[0];
                             $task['Task']['server_technique'] = $params[1];
                         } elseif ($task['Task']['type'] === 'Feed') {
-                            if($task['Task']['action'] === 'fetch') {
+                            if ($task['Task']['action'] === 'fetch') {
                                 $task['Task']['feed_id'] = $params[0];
                             } elseif ($task['Task']['action'] === 'cache') {
                                 if (count($params) < 2) {
