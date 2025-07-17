@@ -48,7 +48,6 @@ class TasksController extends AppController
         }
 
         $this->set('schedulerEnabled', $schedulerEnabled);
-
     }
 
     public function toggleEnabled($id)
@@ -127,8 +126,13 @@ class TasksController extends AppController
                         $params = explode(',', $task['Task']['params']);
                         if ($task['Task']['type'] === 'Server') {
                             $task['Task']['server_id'] = $params[0];
-                            $task['Task']['server_technique'] = $params[1];
+                            $task['Task']['server_action'] = $task['Task']['action'];
+
+                            if ($task['Task']['action'] === 'pull') {
+                                $task['Task']['server_technique'] = $params[1];
+                            }
                         } elseif ($task['Task']['type'] === 'Feed') {
+                            $task['Task']['feed_action'] = $task['Task']['action'];
                             if ($task['Task']['action'] === 'fetch') {
                                 $task['Task']['feed_id'] = $params[0];
                             } elseif ($task['Task']['action'] === 'cache') {
@@ -226,13 +230,18 @@ class TasksController extends AppController
     {
         if ($data['Task']['type'] === 'Server') {
             $data['Task']['action'] = $data['Task']['server_action'];
-            $data['Task']['params'] = implode(
-                ',',
-                [
-                    $data['Task']['server_id'],
-                    $data['Task']['server_technique']
-                ]
-            );
+
+            if ($data['Task']['server_action'] === 'pull') {
+                $data['Task']['params'] = implode(
+                    ',',
+                    [
+                        $data['Task']['server_id'],
+                        $data['Task']['server_technique']
+                    ]
+                );
+            } else {
+                $data['Task']['params'] = $data['Task']['server_id'];
+            }
         } elseif ($data['Task']['type'] === 'Feed') {
             $data['Task']['action'] = $data['Task']['feed_action'];
 
