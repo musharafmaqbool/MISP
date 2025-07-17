@@ -8522,17 +8522,6 @@
                 "extra": ""
             },
             {
-                "column_name": "scheduled_time",
-                "is_nullable": "NO",
-                "data_type": "varchar",
-                "character_maximum_length": "8",
-                "numeric_precision": null,
-                "collation_name": "latin1_swedish_ci",
-                "column_type": "varchar(8)",
-                "column_default": "'6:00'",
-                "extra": ""
-            },
-            {
                 "column_name": "process_id",
                 "is_nullable": "YES",
                 "data_type": "varchar",
@@ -8574,6 +8563,50 @@
                 "collation_name": "utf8mb3_bin",
                 "column_type": "varchar(255)",
                 "column_default": null,
+                "extra": ""
+            }
+            {
+                "column_name": "user_id",
+                "is_nullable": "NO",
+                "data_type": "int",
+                "character_maximum_length": null,
+                "numeric_precision": "10",
+                "collation_name": null,
+                "column_type": "int(11)",
+                "column_default": null,
+                "extra": ""
+            },
+            {
+                "column_name": "action",
+                "is_nullable": "NO",
+                "data_type": "varchar",
+                "character_maximum_length": "40",
+                "numeric_precision": null,
+                "collation_name": "utf8mb3_bin",
+                "column_type": "varchar(40)",
+                "column_default": null,
+                "extra": ""
+            },
+            {
+                "column_name": "params",
+                "is_nullable": "YES",
+                "data_type": "varchar",
+                "character_maximum_length": "255",
+                "numeric_precision": null,
+                "collation_name": "utf8mb3_bin",
+                "column_type": "varchar(255)",
+                "column_default": "NULL",
+                "extra": ""
+            },
+            {
+                "column_name": "enabled",
+                "is_nullable": "NO",
+                "data_type": "tinyint",
+                "character_maximum_length": null,
+                "numeric_precision": "3",
+                "collation_name": null,
+                "column_type": "tinyint(1)",
+                "column_default": "0",
                 "extra": ""
             }
         ],

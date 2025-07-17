@@ -2483,6 +2483,11 @@ class AppModel extends Model
                 break;
             case 141:
                 $sqlArray[] = "DELETE FROM `tasks` WHERE next_execution_time = 1391601600;";
+                $sqlArray[] = "ALTER TABLE `tasks` ADD `user_id` int(11) NOT NULL;";
+                $sqlArray[] = "ALTER TABLE `tasks` ADD `action` varchar(40) NOT NULL;";
+                $sqlArray[] = "ALTER TABLE `tasks` ADD `params` varchar(255) NULL DEFAULT NULL;";
+                $sqlArray[] = "ALTER TABLE `tasks` ADD `enabled` tinyint(1) DEFAULT 0;";
+                $sqlArray[] = "ALTER TABLE `tasks` DROP COLUMN `scheduled_time`;";
                 break;
             case 'fixNonEmptySharingGroupID':
                 $sqlArray[] = 'UPDATE `events` SET `sharing_group_id` = 0 WHERE `distribution` != 4;';
