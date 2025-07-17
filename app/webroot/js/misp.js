@@ -6102,10 +6102,9 @@ function taskFormUpdate() {
         case 'Server':
             $('#ServerAction').show();
             $('#Server').show();
-            if ($('#ServerAction').val() === 'push') {
+            $('#ServerTechnique').show();
+            if ($('#TaskServerAction').val() === 'push') {
                 $('#ServerTechnique').hide();
-            }else{
-                $('#ServerTechnique').show();
             }
             break;
         case 'Feed':

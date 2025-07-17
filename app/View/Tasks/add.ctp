@@ -142,7 +142,7 @@ echo $this->Js->writeBuffer();
             todayHighlight: true
         });
         taskFormUpdate();
-        $("#TaskType, #TaskRunAfterCreation, #TaskFeedAction").change(function() {
+        $("#TaskType, #TaskRunAfterCreation, #TaskFeedAction, #TaskServerAction").change(function() {
             taskFormUpdate();
         });
     });
