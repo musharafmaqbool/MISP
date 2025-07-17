@@ -3,7 +3,7 @@ echo sprintf('<div%s>', empty($ajax) ? ' class="index"' : '');
 
 if (!$schedulerEnabled){
     echo '<div class="alert alert-danger">';
-    echo __('The task scheduler is not enabled. To enable it please add a program configuration to your supervisor configuration file.');
+    echo __('The task scheduler is not enabled. To enable it please add the missing `scheduler` program configuration to your supervisor configuration file.');
     echo '<br>';
     echo __('You can find the configuration file in %s.', '<code>build/supervisor/50-workers.conf</code>');
     echo '<br>';
