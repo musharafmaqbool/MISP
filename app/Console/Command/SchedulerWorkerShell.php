@@ -240,7 +240,7 @@ class SchedulerWorkerShell extends AppShell
 
     public function enqueueServerPushById($task, $user, $jobId)
     {
-        [$serverId] = explode(',', $task['params']);
+        $serverId = $task['params'];
 
         $this->getBackgroundJobsTool()->enqueue(
             BackgroundJobsTool::DEFAULT_QUEUE,
@@ -342,9 +342,14 @@ class SchedulerWorkerShell extends AppShell
 
     private function runFeedCacheTask($task)
     {
-        $scope = $task['params'];
+        [$feedId, $scope] = explode(',', $task['params']);
 
-        if (!in_array($scope, ['freetext', 'csv', 'misp', 'all'], true)) {
+        if (!is_numeric($feedId) && $feedId != 'all') {
+            $this->logMessage('error', $task['id'], "invalid parameters: expected feedId to be numeric or 'all'.");
+            return;
+        }
+
+        if (!in_array($scope, ['all', 'freetext', 'csv', 'misp', 'all'], true)) {
             $this->logMessage('error', $task['id'], "invalid parameters: expected scope to be 'freetext', 'csv', 'misp' or 'all'.");
             return;
         }
@@ -369,7 +374,7 @@ class SchedulerWorkerShell extends AppShell
             [
                 'cacheFeed',
                 $user['id'],
-                $scope,
+                is_numeric($feedId) ? $feedId : $scope,
                 $jobId
             ],
             true,
