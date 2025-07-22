@@ -280,6 +280,7 @@ class TasksController extends AppController
                 $this->Flash->error(__('Please select a workflow.'));
                 return;
             }
+            $data['Task']['params'] = $data['Task']['workflow'];
         } else {
             $this->Flash->error(__('Invalid type'));
             return;
