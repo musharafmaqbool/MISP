@@ -166,7 +166,8 @@ class SchedulerWorkerShell extends AppShell
         $this->Task->save([
             'id' => $task['id'],
             'process_id' => $jobId,
-            'message' => 'OK'
+            'message' => 'OK',
+            'last_run_at' => time()
         ]);
     }
 
@@ -334,7 +335,8 @@ class SchedulerWorkerShell extends AppShell
         $this->Task->save([
             'id' => $task['id'],
             'process_id' => $jobId,
-            'message' => 'OK'
+            'message' => 'OK',
+            'last_run_at' => time()
         ]);
 
         $this->logMessage('info', $task['id'], "enqueued fetch for Feed ID: {$feedId}.");
@@ -387,7 +389,8 @@ class SchedulerWorkerShell extends AppShell
         $this->Task->save([
             'id' => $task['id'],
             'process_id' => $jobId,
-            'message' => 'OK'
+            'message' => 'OK',
+            'last_run_at' => time()
         ]);
 
         $this->logMessage('info', $task['id'], "enqueued cache for Feed with scope: {$scope}.");
@@ -432,7 +435,8 @@ class SchedulerWorkerShell extends AppShell
         $this->Task->save([
             'id' => $task['id'],
             'process_id' => $jobId,
-            'message' => 'OK'
+            'message' => 'OK',
+            'last_run_at' => time()
         ]);
 
         $this->logMessage('info', $task['id'], "enqueued execution for Ad-Hoc Workflow ID: {$workflowId}.");
