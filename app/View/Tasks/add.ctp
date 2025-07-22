@@ -133,6 +133,19 @@ if (!$ajax) {
 }
 echo $this->Js->writeBuffer();
 ?>
+<style>
+.modal-body-long {
+    max-height: 70vh;
+    overflow-y: auto;
+}
+.modal-footer {
+    position: sticky;
+    bottom: 0;
+    background: #f9f9f9;
+    padding-top: 10px;
+    border-top: 1px solid #ddd;
+}
+</style>
 
 <script type="text/javascript">
     $(document).ready(function() {
