@@ -17,18 +17,17 @@ $html .= '<tr><th>' . __('Created') . '</th><td>' . h($job['Job']['date_created'
 $html .= '<tr><th>' . __('Modified') . '</th><td>' . h($job['Job']['date_modified']) . '</td></tr>';
 $html .= '</table>';
 
-if (!empty($logs['error']) || !empty($logs['backtrace'])) {
+if (!empty($logs['error'])) {
     $html .= '<hr>';
     $html .= '<h5><i class="fas fa-bug"></i> ' . __('Error Log') . '</h5>';
 
     if (!empty($logs['error'])) {
         $html .= '<div class="alert alert-danger"><strong>' . __('Error:') . '</strong> ' . h($logs['error']) . '</div>';
     }
-
-    if (!empty($logs['backtrace'])) {
-        $html .= '<h5>' . __('Backtrace') . '</h5>';
-        $html .= '<pre class="bg-light p-2" style="max-height:300px; overflow:auto;">' . h(implode("\n", $logs['backtrace'])) . '</pre>';
-    }
+}
+if (!empty($logs['backtrace']) && $logs['backtrace'][0] !== '') {
+    $html .= '<h5>' . __('Backtrace') . '</h5>';
+    $html .= '<pre class="bg-light p-2" style="max-height:300px; overflow:auto;">' . h(implode("\n", $logs['backtrace'])) . '</pre>';
 }
 
 $modalData = [
