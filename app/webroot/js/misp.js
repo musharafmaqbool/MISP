@@ -6103,9 +6103,6 @@ function taskFormUpdate() {
             $('#ServerAction').show();
             $('#Server').show();
             $('#ServerTechnique').show();
-            if ($('#TaskServerAction').val() === 'push') {
-                $('#ServerTechnique').hide();
-            }
             break;
         case 'Feed':
             $('#FeedAction').show();

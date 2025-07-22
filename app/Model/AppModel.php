@@ -2487,6 +2487,7 @@ class AppModel extends Model
                 $sqlArray[] = "ALTER TABLE `tasks` ADD `action` varchar(40) NOT NULL;";
                 $sqlArray[] = "ALTER TABLE `tasks` ADD `params` varchar(255) NULL DEFAULT NULL;";
                 $sqlArray[] = "ALTER TABLE `tasks` ADD `enabled` tinyint(1) DEFAULT 0;";
+                $sqlArray[] = "ALTER TABLE `tasks` CHANGE `process_id` `last_job_id` int(11) NULL DEFAULT NULL;";
                 $sqlArray[] = "ALTER TABLE `tasks` ADD `last_run_at` int(11) NULL;";
                 $sqlArray[] = "ALTER TABLE `tasks` DROP COLUMN `scheduled_time`;";
                 break;

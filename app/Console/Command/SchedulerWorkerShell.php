@@ -37,7 +37,8 @@ class SchedulerWorkerShell extends AppShell
                     'conditions' => [
                         'next_execution_time <=' => $now,
                         'enabled' => true
-                    ]
+                    ],
+                    'contain' => ['Job'],
                 ]);
             } catch (Exception $e) {
                 CakeLog::error("[WORKER PID: {$this->worker->pid()}][{$this->worker->queue()}] - failed to fetch tasks: " . $e->getMessage());
@@ -62,17 +63,18 @@ class SchedulerWorkerShell extends AppShell
     {
         $this->logMessage('info', $task['id'], "processing task: {$task['type']}");
 
-        if ($task['process_id']) {
-
-            $job = $this->Job->read(null, $task['process_id']);
-
-            if ($job['Job']['status'] === Job::STATUS_RUNNING) {
-                $this->logMessage('info', $task['id'], "job is already running for this task: {$task['process_id']}");
-                return;
-            }
+        if (isset($task['Job']) && $task['Job']['status'] === Job::STATUS_RUNNING) {
+            $this->logMessage('info', $task['id'], "job is already running for this task: {$task['last_job_id']}");
+            return;
         }
 
         $this->setNextExecutionTime($task);
+
+        // Reset last job ID to null before processing
+        if ($task['last_job_id']) {
+            $this->Task->id = $task['id'];
+            $this->Task->saveField('last_job_id', null);
+        }
 
         if ($task['type'] == 'Server') {
             $this->runServerTask($task);
@@ -137,14 +139,14 @@ class SchedulerWorkerShell extends AppShell
             return;
         }
 
-        [$serverId] = explode(',', $task['params']);
+        [$serverId, $technique] = explode(',', $task['params']);
 
         if (!is_numeric($serverId) && $serverId != 'all') {
             $this->logMessage('error', $task['id'], "invalid parameters: expected numeric serverId or 'all'.");
             return;
         }
 
-        $jobId = $this->Job->createJob($user, Job::WORKER_DEFAULT, $task['action'], "Server: $serverId",  ucfirst($task['action'] . 'ing.'));
+        $jobId = $this->Job->createJob($user, Job::WORKER_DEFAULT, $task['action'], "Server: $serverId, $technique",  ucfirst($task['action'] . 'ing.'));
 
         if ($serverId === 'all' && $task['action'] === 'pull') {
             $this->enqueueServerPullAll($task, $user, $jobId);
@@ -165,8 +167,8 @@ class SchedulerWorkerShell extends AppShell
 
         $this->Task->save([
             'id' => $task['id'],
-            'process_id' => $jobId,
-            'message' => 'OK',
+            'last_job_id' => $jobId,
+            'message' => 'Enqueued',
             'last_run_at' => time()
         ]);
     }
@@ -210,7 +212,7 @@ class SchedulerWorkerShell extends AppShell
             BackgroundJobsTool::DEFAULT_QUEUE,
             BackgroundJobsTool::CMD_SERVER,
             [
-                'pull',
+                'pullAll',
                 $user['id'],
                 $technique,
                 $jobId
@@ -224,12 +226,20 @@ class SchedulerWorkerShell extends AppShell
 
     public function enqueueServerPushAll($task, $user, $jobId)
     {
+        [$serverId, $technique] = explode(',', $task['params']);
+
+        if (!in_array($technique, ['full', 'update'], true)) {
+            $this->logMessage('error', $task['id'], "invalid parameters: expected technique to be 'full' or 'update'.");
+            return;
+        }
+
         $this->getBackgroundJobsTool()->enqueue(
             BackgroundJobsTool::DEFAULT_QUEUE,
             BackgroundJobsTool::CMD_SERVER,
             [
                 'pushAll',
                 $user['id'],
+                $technique,
                 $jobId
             ],
             true,
@@ -241,7 +251,7 @@ class SchedulerWorkerShell extends AppShell
 
     public function enqueueServerPushById($task, $user, $jobId)
     {
-        $serverId = $task['params'];
+        [$serverId, $technique] = explode(',', $task['params']);
 
         $this->getBackgroundJobsTool()->enqueue(
             BackgroundJobsTool::DEFAULT_QUEUE,
@@ -250,11 +260,13 @@ class SchedulerWorkerShell extends AppShell
                 'push',
                 $user['id'],
                 $serverId,
+                $technique,
                 $jobId
             ],
             true,
             $jobId
         );
+
 
         $this->logMessage('info', $task['id'], "enqueued Server Push for Server ID: {$serverId}.");
     }
@@ -334,8 +346,8 @@ class SchedulerWorkerShell extends AppShell
 
         $this->Task->save([
             'id' => $task['id'],
-            'process_id' => $jobId,
-            'message' => 'OK',
+            'last_job_id' => $jobId,
+            'message' => 'Enqueued',
             'last_run_at' => time()
         ]);
 
@@ -388,8 +400,8 @@ class SchedulerWorkerShell extends AppShell
 
         $this->Task->save([
             'id' => $task['id'],
-            'process_id' => $jobId,
-            'message' => 'OK',
+            'last_job_id' => $jobId,
+            'message' => 'Enqueued',
             'last_run_at' => time()
         ]);
 
@@ -434,8 +446,8 @@ class SchedulerWorkerShell extends AppShell
 
         $this->Task->save([
             'id' => $task['id'],
-            'process_id' => $jobId,
-            'message' => 'OK',
+            'last_job_id' => $jobId,
+            'message' => 'Enqueued',
             'last_run_at' => time()
         ]);
 

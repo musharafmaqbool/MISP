@@ -8522,14 +8522,14 @@
                 "extra": ""
             },
             {
-                "column_name": "process_id",
+                "column_name": "last_job_id",
                 "is_nullable": "YES",
-                "data_type": "varchar",
-                "character_maximum_length": "32",
+                "data_type": "int",
+                "character_maximum_length": "10",
                 "numeric_precision": null,
-                "collation_name": "latin1_swedish_ci",
-                "column_type": "varchar(32)",
-                "column_default": "NULL",
+                "collation_name": null,
+                "column_type": "int(11)",
+                "column_default": null,
                 "extra": ""
             },
             {

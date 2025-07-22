@@ -87,9 +87,30 @@ $fields = [
         'data_path' => 'Task.next_execution_time',
     ],
     [
-        'name' => __('Message'),
+        'name' => __('Status'),
         'sort' => 'Task.message',
         'data_path' => 'Task.message',
+    ],
+    [
+        'name' => __('Last Job status'),
+        'element' => 'custom',
+        'function' => function (array $row) {
+            if (empty($row['Job'])) {
+                return __('No job executed yet');
+            }
+
+            $status = $row['Job']['status'];
+            switch ($status) {
+                case Job::STATUS_COMPLETED:
+                    return '<span class="badge badge-success">' . __('Completed') . '</span>';
+                case Job::STATUS_FAILED:
+                    return '<span class="badge badge-danger">' . __('Failed') . '</span>';
+                case Job::STATUS_RUNNING:
+                    return '<span class="badge badge-info">' . __('Running') . '</span>';
+                default:
+                    return '<span class="badge badge-secondary">' . __('Unknown') . '</span>';
+            }
+        }
     ],
     [
         'name' => __('Enabled'),

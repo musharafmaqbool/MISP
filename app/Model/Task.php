@@ -10,6 +10,10 @@ class Task extends AppModel
     );
 
     public $belongsTo = [
-        'User'
+        'User',
+        'Job' => [
+            'className' => 'Job',
+            'foreignKey' => 'last_job_id',
+        ]
     ];
 }

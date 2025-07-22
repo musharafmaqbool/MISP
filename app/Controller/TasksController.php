@@ -31,7 +31,7 @@ class TasksController extends AppController
         }
 
         $this->CRUD->index([
-            'contain' => ['User.id', 'User.email'],
+            'contain' => ['User.id', 'User.email', 'Job'],
         ]);
         if ($this->IndexFilter->isRest()) {
             return $this->restResponsePayload;
@@ -231,18 +231,13 @@ class TasksController extends AppController
     {
         if ($data['Task']['type'] === 'Server') {
             $data['Task']['action'] = $data['Task']['server_action'];
-
-            if ($data['Task']['server_action'] === 'pull') {
-                $data['Task']['params'] = implode(
-                    ',',
-                    [
-                        $data['Task']['server_id'],
-                        $data['Task']['server_technique']
-                    ]
-                );
-            } else {
-                $data['Task']['params'] = $data['Task']['server_id'];
-            }
+            $data['Task']['params'] = implode(
+                ',',
+                [
+                    $data['Task']['server_id'],
+                    $data['Task']['server_technique']
+                ]
+            );
         } elseif ($data['Task']['type'] === 'Feed') {
             $data['Task']['action'] = $data['Task']['feed_action'];
 
@@ -334,6 +329,8 @@ class TasksController extends AppController
 
         if ($this->request->is('post')) {
             $task['Task']['next_execution_time'] = time() - 1;
+            $task['Task']['last_job_id'] = null;
+
             $result = $this->Task->save($task);
             if ($result) {
                 if ($this->IndexFilter->isRest()) {
@@ -346,7 +343,7 @@ class TasksController extends AppController
                 if ($this->IndexFilter->isRest()) {
                     return $this->RestResponse->saveFailResponse('Task', 'forceRunTask', $id, $this->validationError, $this->response->type());
                 }
-                $this->Flash->error(__('Failed to force run task: ') . $this->validationError);
+                $this->Flash->error(__('Failed to force run task: '));
                 $this->redirect(['action' => 'index']);
                 return;
             }
@@ -365,7 +362,8 @@ class TasksController extends AppController
 
         $task = $this->Task->find('first', array(
             'recursive' => -1,
-            'conditions' => array('Task.id' => $id)
+            'conditions' => array('Task.id' => $id),
+            'contain' => ['Job']
         ));
 
         if (empty($task)) {
@@ -377,14 +375,7 @@ class TasksController extends AppController
             return;
         }
 
-        $this->Job = ClassRegistry::init('Job');
-        $job = $this->Job->find('first', [
-            'conditions' => [
-                'Job.id' => $task['Task']['process_id'],
-            ],
-        ]);
-
-        if (empty($job)) {
+        if (empty($task['Job'])) {
             if ($this->IndexFilter->isRest()) {
                 return $this->RestResponse->saveFailResponse('Task', 'viewTaskLogs', $id, __('No job found for this task'), $this->response->type());
             }
@@ -394,15 +385,14 @@ class TasksController extends AppController
         }
 
         $this->set('task', $task);
-        $this->set('job', $job);
-        $this->set('logs', $this->__getFailedJobLog($job['Job']['process_id']));
+        $this->set('logs', $this->__getFailedJobLog($task['Job']['process_id']));
         $this->layout = false;
         $this->render('ajax/view_logs');
     }
 
     private function __getFailedJobLog(string $id): array
     {
-        $job = $this->Job->getBackgroundJobsTool()->getJob($id);
+        $job = $this->Task->getBackgroundJobsTool()->getJob($id);
         $output = $job ? $job->output() : __('Job status not found.');
         $backtrace = $job ? explode("\n", $job->error()) : [];
 
