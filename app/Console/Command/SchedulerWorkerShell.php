@@ -342,14 +342,17 @@ class SchedulerWorkerShell extends AppShell
 
     private function runFeedCacheTask($task)
     {
-        [$feedId, $scope] = explode(',', $task['params']);
+        $params = explode(',', $task['params']);
+
+        $feedId = $params[0] ?? 'all';
+        $scope = $params[1] ?? null;
 
         if (!is_numeric($feedId) && $feedId != 'all') {
             $this->logMessage('error', $task['id'], "invalid parameters: expected feedId to be numeric or 'all'.");
             return;
         }
 
-        if (!in_array($scope, ['all', 'freetext', 'csv', 'misp', 'all'], true)) {
+        if (isset($scope) && !in_array($scope, ['all', 'freetext', 'csv', 'misp', 'all'], true)) {
             $this->logMessage('error', $task['id'], "invalid parameters: expected scope to be 'freetext', 'csv', 'misp' or 'all'.");
             return;
         }
@@ -364,7 +367,7 @@ class SchedulerWorkerShell extends AppShell
             $user,
             Job::WORKER_DEFAULT,
             'cache_feeds',
-            $scope,
+            is_numeric($feedId) ? $feedId : $scope,
             __('Starting feed caching.')
         );
 

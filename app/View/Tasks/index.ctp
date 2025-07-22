@@ -1,7 +1,7 @@
 <?php
 echo sprintf('<div%s>', empty($ajax) ? ' class="index"' : '');
 
-if (!$schedulerEnabled){
+if (!$schedulerEnabled) {
     echo '<div class="alert alert-danger">';
     echo __('The task scheduler is not enabled. To enable it please add the missing `scheduler` program configuration to your supervisor configuration file.');
     echo '<br>';
@@ -26,7 +26,7 @@ $fields = [
         'sort' => 'Task.action',
         'data_path' => 'Task.action',
     ],
-        [
+    [
         'name' => __('Parameters'),
         'sort' => 'Task.params',
         'data_path' => 'Task.params',
@@ -123,6 +123,16 @@ echo $this->element('genericElements/IndexTable/index_table', [
         'description' => empty($ajax) ? __('Here you can schedule pre-defined tasks that will be executed every X seconds.') : false,
         'pull' => 'right',
         'actions' => [
+            [
+                'class' => 'modal-open',
+                'url' => "$baseurl/tasks/forceRun",
+                'url_params_data_paths' => ['Task.id'],
+                'icon' => 'play',
+                'title' => __('Force run task'),
+                'complex_requirement' => function ($task) {
+                    return $task['Task']['enabled'];
+                },
+            ],
             [
                 'url' => $baseurl . '/tasks/edit',
                 'url_params_data_paths' => array(

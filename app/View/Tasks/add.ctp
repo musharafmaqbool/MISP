@@ -2,7 +2,7 @@
 echo $this->element('genericElements/Form/genericForm', [
     'data' => [
         'title' => isset($edit) ? __('Edit scheduled task') : __('Add scheduled task'),
-        'description' => __('Scheduled tasks are used to run jobs such as Server Pull or Feed Fetch in the background. You can set the frequency for each task.'),
+        'description' => __('Scheduled tasks are used to run jobs such as Server pull/push/cache or Feed fetch/cache in the background. You can set the frequency for each task. Be aware that if the Server has not pull/push enabled or the Feed is not enabled, the selected action will not be executed.'),
         'fields' => [
             [
                 'field' => 'type',

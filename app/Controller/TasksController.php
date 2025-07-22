@@ -136,12 +136,13 @@ class TasksController extends AppController
                             if ($task['Task']['action'] === 'fetch') {
                                 $task['Task']['feed_id'] = $params[0];
                             } elseif ($task['Task']['action'] === 'cache') {
-                                if (count($params) < 2) {
-                                    $this->Flash->error(__('Invalid feed parameters.'));
-                                    return;
-                                }
                                 $task['Task']['feed_id'] = $params[0];
-                                $task['Task']['feed_scope'] = $params[1];
+                                if ($task['Task']['feed_id'] !== 'all') {
+                                    $task['Task']['feed_scope'] = '';
+                                }
+                                if (isset($params[1])) {
+                                    $task['Task']['feed_scope'] = $params[1];
+                                }
                             }
                         }
                     }
@@ -256,13 +257,18 @@ class TasksController extends AppController
                     $this->Flash->error(__('Please select a feed scope.'));
                     return;
                 }
-                $data['Task']['params'] = implode(
-                    ',',
-                    [
-                        $data['Task']['feed_id'],
-                        $data['Task']['feed_scope'],
-                    ]
-                );
+                if ($data['Task']['feed_id'] === 'all') {
+
+                    $data['Task']['params'] = implode(
+                        ',',
+                        [
+                            $data['Task']['feed_id'],
+                            $data['Task']['feed_scope'],
+                        ]
+                    );
+                } else {
+                    $data['Task']['params'] = $data['Task']['feed_id'];
+                }
             } else {
                 $this->Flash->error(__('Invalid action for Feed'));
                 return;
@@ -294,5 +300,59 @@ class TasksController extends AppController
         }
 
         return $data;
+    }
+
+    public function forceRun($id)
+    {
+        if (!$this->_isSiteAdmin()) {
+            throw new MethodNotAllowedException('You are not authorised to do that.');
+        }
+
+        $task = $this->Task->find('first', array(
+            'recursive' => -1,
+            'conditions' => array('Task.id' => $id)
+        ));
+
+        if (empty($task)) {
+            if ($this->IndexFilter->isRest()) {
+                return $this->RestResponse->saveFailResponse('Task', 'forceRunTask', $id, __('Invalid Task'), $this->response->type());
+            }
+            $this->Flash->error(__('Invalid Task'));
+            $this->redirect(['action' => 'index']);
+            return;
+        }
+
+        if ($task['Task']['enabled'] === false) {
+            if ($this->IndexFilter->isRest()) {
+                return $this->RestResponse->saveFailResponse('Task', 'forceRunTask', $id, __('Task is not enabled, cannot force run.'), $this->response->type());
+            }
+            $this->Flash->error(__('Task is not enabled, cannot force run.'));
+            $this->redirect(['action' => 'index']);
+            return;
+        }
+
+        if ($this->request->is('post')) {
+            $task['Task']['next_execution_time'] = time() - 1;
+            $result = $this->Task->save($task);
+            if ($result) {
+                if ($this->IndexFilter->isRest()) {
+                    return $this->RestResponse->saveSuccessResponse('Task', 'forceRunTask', $id, $this->response->type());
+                }
+                $this->Flash->success(__('Task forced to run immediately.'));
+                $this->redirect(['action' => 'index']);
+                return;
+            } else {
+                if ($this->IndexFilter->isRest()) {
+                    return $this->RestResponse->saveFailResponse('Task', 'forceRunTask', $id, $this->validationError, $this->response->type());
+                }
+                $this->Flash->error(__('Failed to force run task: ') . $this->validationError);
+                $this->redirect(['action' => 'index']);
+                return;
+            }
+        } else {
+            $this->set('task', $task);
+            $this->layout = false;
+            $this->render('ajax/force_run');
+        }
     }
 }
