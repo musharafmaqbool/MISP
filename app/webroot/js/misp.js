@@ -6110,7 +6110,7 @@ function taskFormUpdate() {
         case 'Feed':
             $('#FeedAction').show();
             $('#Feed').show();
-            if ($('#TaskFeedAction').val() === 'cache') {
+            if ($('#TaskFeedAction').val() === 'cache' && $('#TaskFeedId').val() === 'all') {
                 $('#FeedScope').show();
             }else{
                 $('#FeedScope').hide();
