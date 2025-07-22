@@ -395,6 +395,46 @@ class SchedulerWorkerShell extends AppShell
 
     public function runWorkflowAdHoc($task)
     {
-        throw new NotImplementedException("Ad-hoc workflows are not implemented yet.");
+        $workflowId = $task['params'];
+        if (empty($workflowId)) {
+            $this->logMessage('error', $task['id'], "invalid parameters: expected workflow ID.");
+            return;
+        }
+
+        $user = $this->User->getAuthUser($task['user_id']);
+        if (empty($user)) {
+            $this->logMessage('error', $task['id'], "user ID do not match an existing user.");
+            return;
+        }
+
+        $jobId = $this->Job->createJob(
+            $user,
+            Job::WORKER_DEFAULT,
+            'adhoc_workflow',
+            $workflowId,
+            __('Starting Ad-Hoc Workflow execution.')
+        );
+
+        $this->getBackgroundJobsTool()->enqueue(
+            BackgroundJobsTool::DEFAULT_QUEUE,
+            BackgroundJobsTool::CMD_WORKFLOW,
+            [
+                'executeAdHocWorkflow',
+                $workflowId,
+                null, // TODO: support for ad-hoc workflow payload
+                null, // TODO: check what is parameter 3 for executeAdHocWorkflow
+                $jobId
+            ],
+            true,
+            $jobId
+        );
+
+        $this->Task->save([
+            'id' => $task['id'],
+            'process_id' => $jobId,
+            'message' => 'OK'
+        ]);
+
+        $this->logMessage('info', $task['id'], "enqueued execution for Ad-Hoc Workflow ID: {$workflowId}.");
     }
 }
