@@ -32,6 +32,11 @@ $fields = [
         'data_path' => 'Task.params',
     ],
     [
+        'name' => __('Description'),
+        'sort' => 'Task.description',
+        'data_path' => 'Task.description',
+    ],
+    [
         'name' => __('User'),
         'element' => 'links',
         'url' => $baseurl . '/users/view',
@@ -70,15 +75,16 @@ $fields = [
         }
     ],
     [
+        'name' => __('Last run at'),
+        'sort' => 'Task.last_run_at',
+        'element' => 'datetime',
+        'data_path' => 'Task.last_run_at',
+    ],
+    [
         'name' => __('Next execution'),
         'sort' => 'Task.next_execution_time',
         'element' => 'datetime',
         'data_path' => 'Task.next_execution_time',
-    ],
-    [
-        'name' => __('Description'),
-        'sort' => 'Task.description',
-        'data_path' => 'Task.description',
     ],
     [
         'name' => __('Message'),
@@ -132,6 +138,13 @@ echo $this->element('genericElements/IndexTable/index_table', [
                 'complex_requirement' => function ($task) {
                     return $task['Task']['enabled'];
                 },
+            ],
+            [
+                'class' => 'modal-open',
+                'url' => "$baseurl/tasks/viewLogs",
+                'url_params_data_paths' => ['Task.id'],
+                'icon' => 'file-alt',
+                'title' => __('View task logs'),
             ],
             [
                 'url' => $baseurl . '/tasks/edit',

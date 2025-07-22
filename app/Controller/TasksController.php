@@ -356,4 +356,52 @@ class TasksController extends AppController
             $this->render('ajax/force_run');
         }
     }
+
+    public function viewLogs($id)
+    {
+        if (!$this->_isSiteAdmin()) {
+            throw new MethodNotAllowedException('You are not authorised to do that.');
+        }
+
+        $task = $this->Task->find('first', array(
+            'recursive' => -1,
+            'conditions' => array('Task.id' => $id)
+        ));
+
+        if (empty($task)) {
+            if ($this->IndexFilter->isRest()) {
+                return $this->RestResponse->saveFailResponse('Task', 'viewTaskLogs', $id, __('Invalid Task'), $this->response->type());
+            }
+            $this->Flash->error(__('Invalid Task'));
+            $this->redirect(['action' => 'index']);
+            return;
+        }
+
+        $this->Job = ClassRegistry::init('Job');
+        $job = $this->Job->find('first', [
+            'conditions' => [
+                'Job.id' => $task['Task']['process_id'],
+            ],
+        ]);
+
+        $this->set('task', $task);
+        $this->set('job', $job);
+        $this->set('logs', $this->__getFailedJobLog($job['Job']['process_id']));
+        $this->layout = false;
+        $this->render('ajax/view_logs');
+    }
+
+    private function __getFailedJobLog(string $id): array
+    {
+
+        $id = 'a259215b-b590-4cb9-941c-4f2f598e6b1c';
+        $job = $this->Job->getBackgroundJobsTool()->getJob($id);
+        $output = $job ? $job->output() : __('Job status not found.');
+        $backtrace = $job ? explode("\n", $job->error()) : [];
+
+        return [
+            'error' => $output ?? $backtrace[0] ?? '',
+            'backtrace' => $backtrace
+        ];
+    }
 }
