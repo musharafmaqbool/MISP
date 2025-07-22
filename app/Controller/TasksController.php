@@ -393,8 +393,6 @@ class TasksController extends AppController
 
     private function __getFailedJobLog(string $id): array
     {
-
-        $id = 'a259215b-b590-4cb9-941c-4f2f598e6b1c';
         $job = $this->Job->getBackgroundJobsTool()->getJob($id);
         $output = $job ? $job->output() : __('Job status not found.');
         $backtrace = $job ? explode("\n", $job->error()) : [];
