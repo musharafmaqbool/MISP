@@ -384,6 +384,15 @@ class TasksController extends AppController
             ],
         ]);
 
+        if (empty($job)) {
+            if ($this->IndexFilter->isRest()) {
+                return $this->RestResponse->saveFailResponse('Task', 'viewTaskLogs', $id, __('No job found for this task'), $this->response->type());
+            }
+            $this->Flash->error(__('No job found for this task'));
+            $this->redirect(['action' => 'index']);
+            return;
+        }
+
         $this->set('task', $task);
         $this->set('job', $job);
         $this->set('logs', $this->__getFailedJobLog($job['Job']['process_id']));
