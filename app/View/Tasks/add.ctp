@@ -24,6 +24,10 @@ echo $this->element('genericElements/Form/genericForm', [
                 'label' => __('Server'),
                 'options' => $dropdownData['servers'],
                 'type' => 'dropdown',
+                'picker' => true,
+                '_chosenOptions' => [
+                    'width' => '460px',
+                ],
                 'class' => 'span6',
                 'div' => ['id' => 'Server', 'style' => 'display:none', 'class' => 'optionalField'],
             ],
@@ -48,6 +52,10 @@ echo $this->element('genericElements/Form/genericForm', [
                 'label' => __('Feed'),
                 'options' => $dropdownData['feeds'],
                 'type' => 'dropdown',
+                'picker' => true,
+                '_chosenOptions' => [
+                    'width' => '460px',
+                ],
                 'class' => 'span6',
                 'div' => ['id' => 'Feed', 'style' => 'display:none', 'class' => 'optionalField'],
             ],
@@ -64,6 +72,10 @@ echo $this->element('genericElements/Form/genericForm', [
                 'label' => __('Ad-hoc Workflow'),
                 'options' => $dropdownData['workflows'],
                 'type' => 'dropdown',
+                'picker' => true,
+                '_chosenOptions' => [
+                    'width' => '460px',
+                ],
                 'class' => 'span6',
                 'div' => ['id' => 'Workflow', 'style' => 'display:none', 'class' => 'optionalField'],
             ],
@@ -72,6 +84,10 @@ echo $this->element('genericElements/Form/genericForm', [
                 'label' => __('User'),
                 'options' => $dropdownData['users'],
                 'type' => 'dropdown',
+                'picker' => true,
+                '_chosenOptions' => [
+                    'width' => '460px',
+                ],
                 'class' => 'span6'
             ],
             [
@@ -134,17 +150,18 @@ if (!$ajax) {
 echo $this->Js->writeBuffer();
 ?>
 <style>
-.modal-body-long {
-    max-height: 70vh;
-    overflow-y: auto;
-}
-.modal-footer {
-    position: sticky;
-    bottom: 0;
-    background: #f9f9f9;
-    padding-top: 10px;
-    border-top: 1px solid #ddd;
-}
+    .modal-body-long {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .modal-footer {
+        position: sticky;
+        bottom: 0;
+        background: #f9f9f9;
+        padding-top: 10px;
+        border-top: 1px solid #ddd;
+    }
 </style>
 
 <script type="text/javascript">
