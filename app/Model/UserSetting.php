@@ -235,7 +235,7 @@ class UserSetting extends AppModel
      */
     public function checkSettingValidation(array $user, $setting, $value)
     {
-        $funName = self::VALID_SETTINGS['homepage']['validation'];
+        $funName = self::VALID_SETTINGS[$setting]['validation'];
         $validationFn = ['UserSetting', $funName];
         if (!empty($funName) && is_callable($validationFn)) {
             $check = call_user_func($validationFn, $value, $user);
