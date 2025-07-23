@@ -147,7 +147,7 @@ echo $this->element('genericElements/IndexTable/index_table', [
         ],
         'fields' => $fields,
         'title' => empty($ajax) ? __('Scheduled Tasks Index') : false,
-        'description' => empty($ajax) ? __('Here you can schedule pre-defined tasks that will be executed every X seconds.') : false,
+        'description' => empty($ajax) ? __('Here you can schedule pre-defined tasks that will be executed every X seconds/minutes/hours/days.') : false,
         'pull' => 'right',
         'actions' => [
             [
