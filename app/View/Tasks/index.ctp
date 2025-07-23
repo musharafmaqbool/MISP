@@ -45,7 +45,7 @@ $fields = [
         'data_path' => 'User.email',
     ],
     [
-        'name' => __('Timer (s)'),
+        'name' => __('Frequency'),
         'sort' => 'Task.timer',
         'data_path' => 'Task.timer',
         'element' => 'custom',
