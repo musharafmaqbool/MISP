@@ -1,15 +1,14 @@
 <?php
     echo $this->Form->create('Task', array(
-        'id' => 'RequiredCheckboxForm' . h($id),
+        'id' => 'EnabledCheckboxForm' . h($id),
         'label' => false,
         'style' => 'display:none;',
         'url' => $baseurl . '/tasks/toggleEnabled/' . $id
     ));
-    echo $this->Form->checkbox('required', array(
-        'checked' => $required,
+    echo $this->Form->checkbox('enabled', array(
+        'checked' => $enabled,
         'label' => false,
         'disabled' => !$isSiteAdmin,
-        'class' => 'required-toggle'
     ));
     echo $this->Form->end();
 ?>
