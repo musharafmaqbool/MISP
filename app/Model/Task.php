@@ -5,6 +5,8 @@ class Task extends AppModel
 {
     public $recursive = -1;
 
+    public $useTable = 'scheduled_tasks';
+
     public $actsAs = array(
         'Containable',
     );

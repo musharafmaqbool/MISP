@@ -2482,14 +2482,7 @@ class AppModel extends Model
                 $sqlArray[] = "ALTER TABLE `taxii_servers` MODIFY `api_key` TEXT NOT NULL";
                 break;
             case 141:
-                $sqlArray[] = "DELETE FROM `tasks` WHERE next_execution_time = 1391601600;";
-                $sqlArray[] = "ALTER TABLE `tasks` ADD `user_id` int(11) NOT NULL;";
-                $sqlArray[] = "ALTER TABLE `tasks` ADD `action` varchar(40) NOT NULL;";
-                $sqlArray[] = "ALTER TABLE `tasks` ADD `params` varchar(255) NULL DEFAULT NULL;";
-                $sqlArray[] = "ALTER TABLE `tasks` ADD `enabled` tinyint(1) DEFAULT 0;";
-                $sqlArray[] = "ALTER TABLE `tasks` CHANGE `process_id` `last_job_id` int(11) NULL DEFAULT NULL;";
-                $sqlArray[] = "ALTER TABLE `tasks` ADD `last_run_at` int(11) NULL;";
-                $sqlArray[] = "ALTER TABLE `tasks` DROP COLUMN `scheduled_time`;";
+                $sqlArray[] = "CREATE TABLE `scheduled_tasks` (`id` INT(11) NOT NULL AUTO_INCREMENT, `type` VARCHAR(100) NOT NULL, `timer` INT(11) NOT NULL, `last_job_id` INT(11) DEFAULT NULL, `description` VARCHAR(255) NOT NULL, `next_execution_time` INT(11) NOT NULL, `message` VARCHAR(255) NOT NULL, `user_id` INT(11) NOT NULL, `action` VARCHAR(40) NOT NULL, `params` VARCHAR(255) DEFAULT NULL, `enabled` TINYINT(1) DEFAULT 0, `last_run_at` INT(11) DEFAULT NULL, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
                 break;
             case 'fixNonEmptySharingGroupID':
                 $sqlArray[] = 'UPDATE `events` SET `sharing_group_id` = 0 WHERE `distribution` != 4;';
