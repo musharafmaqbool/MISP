@@ -384,6 +384,17 @@ class TasksController extends AppController
             return;
         }
 
+        $this->Org = ClassRegistry::init('Organisation');
+        if (empty($task['Job']['org_id'])) {
+            $task['Org'] = ['name' => 'ADMIN'];
+        } else {
+            $task['Org'] = $this->Org->find('first', [
+                'conditions' => ['Organisation.id' => $task['Job']['org_id']],
+                'fields' => ['Organisation.name'],
+                'recursive' => -1
+            ]);
+        }
+
         $this->set('task', $task);
         $this->set('logs', $this->__getFailedJobLog($task['Job']['process_id']));
         $this->layout = false;
