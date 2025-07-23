@@ -8564,7 +8564,7 @@
                 "column_type": "varchar(255)",
                 "column_default": null,
                 "extra": ""
-            }
+            },
             {
                 "column_name": "user_id",
                 "is_nullable": "NO",
