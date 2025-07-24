@@ -778,7 +778,9 @@ class ServerShell extends AppShell
         }
         echo __('All reports sent. Task took %s seconds', time() -  $start_time) . PHP_EOL;
 
-        $this->Job->saveStatus($jobId, true, 'All reports sent.');
+        if ($jobId !== null) {
+            $this->Job->saveProgress($jobId, 'All reports sent.', 100);
+        }
     }
 
     private function __getPeriodsForToday(): array
