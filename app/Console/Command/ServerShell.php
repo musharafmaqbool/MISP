@@ -95,6 +95,8 @@ class ServerShell extends AppShell
 
         if (!empty($this->args[2])) {
             $pullAllJobId = $this->args[2];
+        } else {
+            $pullAllJobId = $this->Job->createJob($user, Job::WORKER_DEFAULT, 'pullAll', 'All servers', 'Starting pull from all servers.');
         }
 
         $servers = $this->Server->find('list', array(
@@ -123,9 +125,7 @@ class ServerShell extends AppShell
             $this->out("Enqueued pulling from $serverName server as job $backgroundJobId");
         }
 
-        if (!empty($pullAllJobId)) {
-            $this->Job->saveStatus($pullAllJobId, true, 'Job done.');
-        }
+        $this->Job->saveStatus($pullAllJobId, true, 'Job done.');
     }
 
     public function pull()
@@ -215,6 +215,8 @@ class ServerShell extends AppShell
 
         if (!empty($this->args[2])) {
             $pushAllJobId = $this->args[2];
+        } else {
+            $pushAllJobId = $this->Job->createJob($user, Job::WORKER_DEFAULT, 'pushAll', 'All servers', 'Starting push to all servers.');
         }
 
         $servers = $this->Server->find('list', array(
@@ -239,9 +241,7 @@ class ServerShell extends AppShell
             $this->out("Enqueued pushing from $serverName server as job $jobId");
         }
 
-        if (!empty($pushAllJobId)) {
-            $this->Job->saveStatus($pushAllJobId, true, 'Job done.');
-        }
+        $this->Job->saveStatus($pushAllJobId, true, 'Job done.');
     }
 
     public function listFeeds()
@@ -779,7 +779,7 @@ class ServerShell extends AppShell
         echo __('All reports sent. Task took %s seconds', time() -  $start_time) . PHP_EOL;
 
         if ($jobId !== null) {
-            $this->Job->saveProgress($jobId, 'All reports sent.', 100);
+            $this->Job->saveStatus($jobId, true, 'Job done.');
         }
     }
 
