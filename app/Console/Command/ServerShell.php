@@ -755,7 +755,12 @@ class ServerShell extends AppShell
 
     public function sendPeriodicSummaryToUsers()
     {
-        
+        $jobId = null;
+        if (isset($this->args[0]) && is_numeric($this->args[0])) {
+            $jobId = $this->args[0];
+            $this->Job->read(null, $jobId);
+        }
+
         $periods = $this->__getPeriodsForToday();
         $start_time = time();
         echo __n('Started periodic summary generation for the %s period', 'Started periodic summary generation for periods: %s', count($periods), implode(', ', $periods)) . PHP_EOL;
@@ -772,6 +777,8 @@ class ServerShell extends AppShell
             }
         }
         echo __('All reports sent. Task took %s seconds', time() -  $start_time) . PHP_EOL;
+
+        $this->Job->saveStatus($jobId, true, 'All reports sent.');
     }
 
     private function __getPeriodsForToday(): array

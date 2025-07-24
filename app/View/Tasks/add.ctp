@@ -7,14 +7,14 @@ echo $this->element('genericElements/Form/genericForm', [
             [
                 'field' => 'type',
                 'label' => __('Type'),
-                'options' => ['Server' => 'Server', 'Feed' => 'Feed', 'Workflow' => 'Workflow'],
+                'options' => ['Server' => 'Server', 'Feed' => 'Feed', 'Workflow' => 'Workflow', 'Periodic Summary' => 'Periodic Summary'],
                 'type' => 'dropdown',
                 'class' => 'form-control span6',
             ],
             [
                 'field' => 'server_action',
                 'label' => __('Action'),
-                'options' => ['pull' => 'pull', 'push' => 'push', 'cache' => 'cache'],
+                'options' => ['pull' => 'pull', 'push' => 'push', 'cache' => 'cache', 'periodic_summary' => 'periodic_summary'],
                 'type' => 'dropdown',
                 'class' => 'span6',
                 'div' => ['id' => 'ServerAction', 'style' => 'display:none', 'class' => 'optionalField'],

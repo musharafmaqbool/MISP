@@ -184,8 +184,6 @@ class TasksController extends AppController
         }
     }
 
-
-
     public function forceRun($id)
     {
         if (!$this->_isSiteAdmin()) {
@@ -393,6 +391,8 @@ class TasksController extends AppController
                 return;
             }
             $data['Task']['params'] = $data['Task']['workflow'];
+        } elseif ($data['Task']['type'] === 'Periodic Summary') {
+            $data['Task']['action'] = 'send';
         } else {
             $this->Flash->error(__('Invalid type'));
             return;

@@ -89,6 +89,13 @@ class SchedulerWorkerShell extends AppShell
             }
         } elseif ($task['type'] == 'Workflow') {
             $this->runWorkflowAdHoc($task);
+        } elseif ($task['type'] == 'Periodic Summary') {
+            if ($task['action'] !== 'send') {
+                $this->logMessage('error', $task['id'], "unknown action for Periodic Summary: {$task['action']}");
+                return;
+            }
+
+            $this->runSendPeriodicSummary($task);
         } else {
             $this->logMessage('error', $task['id'], "unknown type: {$task['type']}");
             return;
@@ -452,5 +459,42 @@ class SchedulerWorkerShell extends AppShell
         ]);
 
         $this->logMessage('info', $task['id'], "enqueued execution for Ad-Hoc Workflow ID: {$workflowId}.");
+    }
+
+    public function runSendPeriodicSummary($task)
+    {
+        $user = $this->User->getAuthUser($task['user_id']);
+        if (empty($user)) {
+            $this->logMessage('error', $task['id'], "user ID do not match an existing user.");
+            return;
+        }
+
+        $jobId = $this->Job->createJob(
+            $user,
+            Job::WORKER_DEFAULT,
+            'send_periodic_summary',
+            $user['id'],
+            __('Starting Periodic Summary sending.')
+        );
+
+        $this->getBackgroundJobsTool()->enqueue(
+            BackgroundJobsTool::DEFAULT_QUEUE,
+            BackgroundJobsTool::CMD_SERVER,
+            [
+                'sendPeriodicSummaryToUsers',
+                $jobId
+            ],
+            true,
+            $jobId
+        );
+
+        $this->Task->save([
+            'id' => $task['id'],
+            'last_job_id' => $jobId,
+            'message' => 'Enqueued',
+            'last_run_at' => time()
+        ]);
+
+        $this->logMessage('info', $task['id'], "enqueued Periodic Summary sending.");
     }
 }
