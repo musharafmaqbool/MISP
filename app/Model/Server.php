@@ -3885,10 +3885,6 @@ class Server extends AppModel
             'scheduler' => array('ok' => false)
         );
 
-        if (Configure::read('SimpleBackgroundJobs.enabled')) {
-            unset($worker_array['scheduler']);
-        }
-
         try {
             $workers = $this->getWorkers();
         } catch (Exception $e) {
