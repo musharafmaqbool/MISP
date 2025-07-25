@@ -646,6 +646,7 @@ class AdminShell extends AppShell
                     'highPerformanceIndexingAttributes',
                     'highPerformanceIndexingObjects',
                     'highPerformanceIndexingDefaultCorrelations',
+                    'highPerformanceIndexingNoAclCorrelations',
                     'highPerformanceIndexingConnectorTags'
                 ],
                 'help' => __('High performance indexing of events, attributes, objects and default correlations. Drastically improves view and search operations. This is a slow reindexing process and is meant for servers with abundant RAM and innodb_buffer_pool_size set to a high value.'),

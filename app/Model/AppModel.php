@@ -645,6 +645,26 @@ class AppModel extends Model
                     $temp = rtrim($temp, ',') . " ;";
                     $sqlArray[] = $temp;
                 }
+            break;
+            case 'highPerformanceIndexingNoAclCorrelations':
+                $temp = "ALTER TABLE no_acl_correlations";
+                $notEmpty = false;
+                $indeces = [
+                    'idx_nac_attr_evt'    => '(attribute_id, event_id)',
+                    'idx_nac_1attr_1evt'  => '(1_attribute_id, 1_event_id)',
+                    'idx_nac_val_attr'    => '(value_id, attribute_id)',
+                    'idx_nac_val_1attr'   => '(value_id, 1_attribute_id)',
+                ];
+                foreach ($indeces as $index => $data) {
+                    if (!$this->checkNamedIndexExists('no_acl_correlations', $index)) {
+                        $temp .= " ADD INDEX $index $data,";
+                        $notEmpty = true;
+                    }
+                }
+                if ($notEmpty) {
+                    $temp = rtrim($temp, ',') . " ;";
+                    $sqlArray[] = $temp;
+                }
                 break;
             case 'highPerformanceIndexingConnectorTags':
                 $indeces = [
