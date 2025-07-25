@@ -1437,8 +1437,7 @@ class Event extends AppModel
             $conditions['AND']['OR'] = [
                 [
                     'AND' => [
-                        'Event.distribution >' => 0,
-                        'Event.distribution <' => 4,
+                        'Event.distribution BETWEEN 1 AND 3',
                         $unpublishedPrivate ? array('Event.published' => 1) : [],
                     ],
                 ],
@@ -1546,7 +1545,7 @@ class Event extends AppModel
                     'eventid' => array('function' => 'set_filter_eventid', 'pop' => true),
                     'eventinfo' => array('function' => 'set_filter_eventinfo'),
                     'ignore' => array('function' => 'set_filter_ignore'),
-                    'tags' => array('function' => 'set_filter_tags', 'pop' => true),
+                    'tags' => array('function' => 'set_filter_tags', 'pop' => true, 'skip_neg' => true),
                     'event_tags' => array('function' => 'set_filter_tags', 'pop' => true),
                     'from' => array('function' => 'set_filter_timestamp', 'pop' => true),
                     'to' => array('function' => 'set_filter_timestamp', 'pop' => true),
@@ -1574,7 +1573,7 @@ class Event extends AppModel
                     'category' => array('function' => 'set_filter_simple_attribute'),
                     'type' => array('function' => 'set_filter_type'),
                     'object_relation' => array('function' => 'set_filter_simple_attribute'),
-                    'tags' => array('function' => 'set_filter_tags', 'pop' => true),
+                    'tags' => array('function' => 'set_filter_tags', 'pop' => true, 'skip_neg' => true),
                     'ignore' => array('function' => 'set_filter_ignore'),
                     'deleted' => array('function' => 'set_filter_deleted'),
                     'to_ids' => array('function' => 'set_filter_to_ids'),
@@ -1591,6 +1590,9 @@ class Event extends AppModel
                             'pop' => !empty($simple_param_scoped[$param]['pop']),
                             'context' => 'Event'
                         );
+                        if (!empty($simple_param_scoped[$param]['skip_neg'])) {
+                            $options['skip_neg'] = true;
+                        }
                         if ($scope === 'Event') {
                             $conditions = $this->{$simple_param_scoped[$param]['function']}($params, $conditions, $options);
                         } else {

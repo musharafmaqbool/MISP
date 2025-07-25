@@ -6103,6 +6103,22 @@ class Server extends AppModel
                     'type' => 'boolean',
                     'null' => true
                 ],
+                'log_errors_ndjson' => [
+                    'level' =>  self::SETTING_RECOMMENDED,
+                    'description' => __('Log errors in ndjson format additionally to error.log.)'),
+                    'value' => false,
+                    'test' => 'testBool',
+                    'type' => 'boolean'
+                ],
+                'log_errors_ndjson_path' => [
+                    'level' =>  self::SETTING_RECOMMENDED,
+                    'description' => __('Path for the ndjson error log file - defaults to ' . APP . '/app/tmp/logs/error.log.ndjson.'),
+                    'value' => APP . '/tmp/logs/error.log.ndjson',
+                    'test' => 'testForEmpty',
+                    'type' => 'string',
+                    'cli' => true,
+                    'null' => true
+                ],
                 'disable_seen_ips_authkeys' => [
                     'level' => self::SETTING_RECOMMENDED,
                     'description' => __('Disable the storing of IP addresses used to make API calls with an AuthKey against this AuthKey in the database.'),
@@ -7917,6 +7933,27 @@ class Server extends AppModel
                     'value' => false,
                     'test' => 'testBool',
                     'type' => 'boolean'
+                ],
+                'Benchmarking_log_query_metrics' => [
+                    'level' => 2,
+                    'description' => __('Enable the logging of SQL query metrics. This setting is required for all slow_log features to work.'),
+                    'value' => false,
+                    'test' => 'testBool',
+                    'type' => 'boolean'
+                ],
+                'Benchmarking_slow_log_threshold' => [
+                    'level' => 2,
+                    'description' => __('The duration of a query to be considered a slow query. Default: 5000 (=5s)'),
+                    'value' => 5000,
+                    'test' => 'testForEmpty',
+                    'type' => 'numeric'
+                ],
+                'Benchmarking_slow_query_retention' => [
+                    'level' => 2,
+                    'description' => __('The retention of slow query log entries in seconds. Default: 259200 (=3 days)'),
+                    'value' => 259200,
+                    'test' => 'testForEmpty',
+                    'type' => 'numeric'
                 ],
                 'Enrichment_services_enable' => array(
                     'level' => 0,
