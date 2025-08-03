@@ -4642,6 +4642,43 @@ class AppModel extends Model
         return true;
     }
 
+    public function getSearchParamsByToken($filters)
+    {
+        $token = $filters['search_token'];
+        $redis = $this->setupRedis();
+        if (!$redis) {
+            throw new Exception('Could not connect to Redis server');
+        }
+        $path = 'misp:search_tokens:' . $token;
+        $params = $redis->get($path);
+        if (empty($params)) {
+            throw new NotFoundException(__('Invalid search token or already expired.'));
+        }
+        $params = json_decode($params, true);
+        $params['search_token'] = $token;
+        $toUnset = ['page', 'limit', 'sort', 'direction'];
+        foreach ($toUnset as $unset) {
+            if (isset($params[$unset])) {
+                unset($params[$unset]);
+            }
+        }
+        return array_merge($filters, $params);
+    }
+
+    public function setSearchParamsByToken($params)
+    {
+        $redis = $this->setupRedis();
+        if (!$redis) {
+            throw new Exception('Could not connect to Redis server');
+        }
+        $token = bin2hex(Security::randomBytes(32));
+        $path = 'misp:search_tokens:' . $token;
+        $params = json_encode($params);
+        $redis->set($path, $params);
+        $redis->expire($path, 3600);
+        return $token;
+    }
+    
     public function fixUpdatedGalaxyID()
     {
         $this->GalaxyCluster = ClassRegistry::init('GalaxyCluster');
@@ -4689,40 +4726,6 @@ class AppModel extends Model
             $this->GalaxyCluster->saveMany($chunk, $options);
         }
         return true;
-    }
-    
-    public function getSearchParamsByToken($filters)
-    {
-        $token = $filters['search_token'];
-        $redis = $this->setupRedis();
-        if (!$redis) {
-            throw new Exception('Could not connect to Redis server');
-        }
-        $path = 'misp:search_tokens:' . $token;
-        $params = $redis->get($path);
-        $params = json_decode($params, true);
-        $params['search_token'] = $token;
-        $toUnset = ['page', 'limit', 'sort', 'direction'];
-        foreach ($toUnset as $unset) {
-            if (isset($params[$unset])) {
-                unset($params[$unset]);
-            }
-        }
-        return array_merge($filters, $params);
-    }
-
-    public function setSearchParamsByToken($params)
-    {
-        $redis = $this->setupRedis();
-        if (!$redis) {
-            throw new Exception('Could not connect to Redis server');
-        }
-        $token = bin2hex(Security::randomBytes(32));
-        $path = 'misp:search_tokens:' . $token;
-        $params = json_encode($params);
-        $redis->set($path, $params);
-        $redis->expire($path, 3600);
-        return $token;
     }
 
     public function checkDbSupport($functionality)
