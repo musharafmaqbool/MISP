@@ -4717,6 +4717,9 @@ class AppModel extends Model
         }
         $path = 'misp:search_tokens:' . $token;
         $params = $redis->get($path);
+        if (empty($params)) {
+            throw new NotFoundException(__('Invalid search token or already expired.'));
+        }
         $params = json_decode($params, true);
         $params['search_token'] = $token;
         $toUnset = ['page', 'limit', 'sort', 'direction'];
