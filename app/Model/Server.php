@@ -5349,7 +5349,8 @@ class Server extends AppModel
                     'null' => true,
                     'options' => [
                         'Default' => __('Default Correlation Engine'),
-                        'NoAcl' => __('No ACL Engine')
+                        'NoAcl' => __('No ACL Engine'),
+                        'OnDemand' => __('On Demand Correlation Engine')
                     ],
                 ],
                 'correlation_limit' => [
