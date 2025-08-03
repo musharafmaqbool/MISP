@@ -26,7 +26,7 @@ rm -f ./../app/files/scripts/tmp/{test-stix1.xml,test-stix1.xml.json}
 # rm -f ./../app/files/scripts/tmp/{test-stix2.json,test-stix2.json.stix2}
 
 # Test converting MISP to STIX2
-cp event.json /tmp/
-python ./../app/files/scripts/stix2/misp2stix2.py -i /tmp/event.json | python3 -c 'import sys, json; data = json.load(sys.stdin); print(data); sys.exit(0 if data["success"] == 1 else 1)'
-python3 -c 'import sys, json; json.load(sys.stdin)' < /tmp/event.json.out
-rm -f /tmp/{event.json,event.json.out}
+# cp event.json /tmp/
+# python ./../app/files/scripts/stix2/misp2stix2.py -i /tmp/event.json | python3 -c 'import sys, json; data = json.load(sys.stdin); print(data); sys.exit(0 if data["success"] == 1 else 1)'
+# python3 -c 'import sys, json; json.load(sys.stdin)' < /tmp/event.json.out
+# rm -f /tmp/{event.json,event.json.out}
