@@ -120,7 +120,6 @@ class AppController extends Controller
             Configure::write('App.fullBaseUrl', $baseurl);
             Router::fullBaseUrl($baseurl);
         }
-
         $this->_setupBaseurl();
         $this->User = ClassRegistry::init('User');
         if (Configure::read('Plugin.Benchmarking_enable')) {
@@ -234,6 +233,7 @@ class AppController extends Controller
                 }
                 return $this->_jsonDecode($dataToDecode);
             };
+
             //  Throw exception if JSON in request is invalid. Default CakePHP behaviour would just ignore that error.
             $this->RequestHandler->addInputType('json', [$jsonDecode]);
             $this->Security->unlockedActions = [$action];
@@ -1236,6 +1236,9 @@ class AppController extends Controller
                 }
             } else {
                 $headerNamespace = '';
+            }
+            if (empty($server[$headerNamespace . $header])) {
+                return false;
             }
             if (isset($server[$headerNamespace . $header]) && !empty($server[$headerNamespace . $header])) {
                 if (Configure::read('Plugin.CustomAuth_only_allow_source') && Configure::read('Plugin.CustomAuth_only_allow_source') !== $this->User->_remoteIp()) {
