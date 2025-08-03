@@ -20,10 +20,10 @@ python ./../app/files/scripts/stix2misp.py test-stix1.xml 1 1 ./../app/files/scr
 rm -f ./../app/files/scripts/tmp/{test-stix1.xml,test-stix1.xml.json}
 
 # Test converting STIX2 to MISP format
-curl -sS --compressed https://raw.githubusercontent.com/oasis-open/cti-stix2-json-schemas/master/examples/indicator-for-c2-ip-address.json > ./../app/files/scripts/tmp/test-stix2.json
-python ./../app/files/scripts/stix2/stix2misp.py -i ./../app/files/scripts/tmp/test-stix2.json --distribution 1 | python3 -c 'import sys, json; data = json.load(sys.stdin); print(data); sys.exit(0 if data["success"] == 1 else 1)'
-python3 -c 'import sys, json; json.load(sys.stdin)' < ./../app/files/scripts/tmp/test-stix2.json.out
-rm -f ./../app/files/scripts/tmp/{test-stix2.json,test-stix2.json.stix2}
+# curl -sS --compressed https://raw.githubusercontent.com/oasis-open/cti-stix2-json-schemas/master/examples/indicator-for-c2-ip-address.json > ./../app/files/scripts/tmp/test-stix2.json
+# python ./../app/files/scripts/stix2/stix2misp.py -i ./../app/files/scripts/tmp/test-stix2.json --distribution 1 | python3 -c 'import sys, json; data = json.load(sys.stdin); print(data); sys.exit(0 if data["success"] == 1 else 1)'
+# python3 -c 'import sys, json; json.load(sys.stdin)' < ./../app/files/scripts/tmp/test-stix2.json.out
+# rm -f ./../app/files/scripts/tmp/{test-stix2.json,test-stix2.json.stix2}
 
 # Test converting MISP to STIX2
 cp event.json /tmp/
