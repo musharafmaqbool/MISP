@@ -3704,7 +3704,7 @@ function testConnection(id) {
                 html += '<span class="orange bold" title="The user account on the remote instance is not a sync user.">Remote user not a sync user, only pulling events is available.</span>';
                 break;
             case 8:
-                html += '<span class="orange bold" title="The user account on the remote instance is only a sightings user.">Remote user not a sync user, only pulling events is available. Pushing availale for sightings only</span>';
+                html += '<span class="orange bold" title="The user account on the remote instance is only a sightings user.">Remote user not a sync user, only pulling events is available. Pushing available for sightings only</span>';
                 break;
             }
 
