@@ -1159,6 +1159,13 @@ class GalaxyCluster extends AppModel
                     $galaxyClusterRelationParams['contain']['GalaxyClusterRelation'][] = 'TargetCluster';
                 }
                 $gCRData = $gCR->find('all', $galaxyClusterRelationParams);
+                $gCRData = array_map(function ($element) {
+                    $temp = $element['GalaxyClusterRelation'];
+                    unset($element['GalaxyClusterRelation']);
+                    $element = array_merge($element, $temp);
+                    return $element;
+                }, $gCRData);
+
                 $gCRLookupTable[$cluster['GalaxyCluster']['id']] = $gCRData;
                 $clusters[$k]['GalaxyClusterRelation'] = $gCRLookupTable[$cluster['GalaxyCluster']['id']];
             }
