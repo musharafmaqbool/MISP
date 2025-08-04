@@ -1806,14 +1806,15 @@ class Attribute extends AppModel
                 $conditions['AND'][] = $options['conditions'];
             }
             if (!empty($options['event_ids'])) {
-                return $this->find('column', [
-                    'fields'     => ['DISTINCT(Attribute.event_id) as event_id'],
+                $data = $this->find('column', [
+                    'fields'     => ['event_id'],
                     'conditions' => $conditions,
                     'recursive'  => -1,
-                    'contain'    => ['Event','Object'],
+                    'contain'    => ['Event', 'Object'],
                     'order'      => false,
                     'group'      => false
                 ]);
+                return array_unique($data);
             }
             return $this->find('list', [
                 'fields'     => ['Attribute.event_id','Attribute.event_id'],
@@ -1875,7 +1876,6 @@ class Attribute extends AppModel
         } else {
             $fields = $default_fields;
         }
-    
         $sgids     = $this->SharingGroup->authorizedIds($user);
         $params = [
             'fields'     => $fields,
