@@ -1129,7 +1129,7 @@ class GalaxyCluster extends AppModel
         }
 
         // moved the galaxyClusterRelation to a separate part of the function
-        if (empty($options['count']) && empty($options['list'])) {
+        if ($full && empty($options['count']) && empty($options['list'])) {
             // we'll build a lookup table for faster processing
             $gCRLookupTable = [];
             $gCR = ClassRegistry::init('GalaxyClusterRelation');
