@@ -1149,7 +1149,6 @@ class GalaxyCluster extends AppModel
                         'SourceCluster'
                     ]
                 ];
-
                 $temp = $this->GalaxyClusterRelation->buildConditions($user, false, 'SourceCluster');
                 if ($temp) {
                     $galaxyClusterRelationParams['conditions'][] = $temp;
@@ -1602,8 +1601,8 @@ class GalaxyCluster extends AppModel
             'conditions' => ['GalaxyCluster.tag_name' => $clusterTagNames],
             'contain' => ['Galaxy', 'GalaxyElement'],
         ];
-        $clusters = $this->fetchGalaxyClusters($user, $options);
 
+        $clusters = $this->fetchGalaxyClusters($user, $options);
         $clustersByTagName = [];
         foreach ($clusters as $cluster) {
             $clustersByTagName[strtolower($cluster['GalaxyCluster']['tag_name'])] = $cluster;
@@ -2089,13 +2088,15 @@ class GalaxyCluster extends AppModel
             return $this->__assetCache['gcOwnerIds'];
         } else {
             $alias = $this->alias;
-            $gcOwnerIds = $this->fetchGalaxyClusters($user, array(
+            $gcOwnerIds = [];
+            $gcOwnerIds = $this->find('list', [
                 'fields' => 'id',
+                'recursive' => -1,
                 'conditions' => [
                     "{$alias}.org_id" => $user['org_id']
                 ]
-            ), false);
-            $gcOwnerIds = Hash::extract($gcOwnerIds, "{n}.{$alias}.id");
+            ]);
+            $gcOwnerIds = array_values($gcOwnerIds);
             if (empty($gcOwnerIds)) {
                 $gcOwnerIds = array(-1);
             }
