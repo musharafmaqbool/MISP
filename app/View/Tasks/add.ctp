@@ -84,6 +84,7 @@ echo $this->element('genericElements/Form/genericForm', [
                 'label' => __('User'),
                 'options' => $dropdownData['users'],
                 'type' => 'dropdown',
+                'default' => Configure::read('CurrentUserId'),
                 'picker' => true,
                 '_chosenOptions' => [
                     'width' => '460px',
