@@ -82,7 +82,7 @@
             <tr>
                 <td colspan="5">
                     <div class="alert alert-danger">
-                         <p>The task scheduler is not enabled. To enable it please add the missing <code>scheduler</code> program configuration to your supervisor configuration file (<code>/etc/supervisor/conf.d/50-workers.conf</code>).</p>
+                         <p>The task scheduler is not enabled. To enable it please add the missing <code>scheduler</code> program configuration to your supervisor configuration file (<code>/etc/supervisor/conf.d/*-workers.conf</code>).</p>
                          <p>You can find the sample configuration file in <code>build/supervisor/50-workers.conf</code>.</p>
                          <p>For more information, please refer to the <a href="https://github.com/MISP/MISP/wiki/Supervisor-Task-Scheduler-Guide-(2.5)">MISP documentation</a>.</p>
                     </div>
