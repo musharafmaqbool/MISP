@@ -739,6 +739,7 @@ class AppModel extends Model
                 break;
             case 'OnDemandCorrelationTuning':
                 $temp = "ALTER TABLE attributes";
+                $notEmpty = false;
                 $indeces = [
                     'idx_val1_source' => '(event_id, value1(64), deleted, disable_correlation, type, id)',
                     'idx_val1_target' => '(value1(64), event_id, deleted, disable_correlation, type, id)',
