@@ -2769,6 +2769,7 @@ class MispAttribute extends AppModel
                             'attribute_id' => $this->id,
                             'event_id' => $eventId,
                             'tag_id' => $tag_id,
+                            'local' => !empty($tag['local']) ? $tag['local'] : 0,
                             'relationship_type' => empty($tag['relationship_type']) ? null : $tag['relationship_type']
                         ];
                         $this->AttributeTag->save($at);
