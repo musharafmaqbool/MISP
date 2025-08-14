@@ -11,6 +11,9 @@
     if (isset($field['id_data_path'])) {
         $attributeId = Hash::get($row, $field['id_data_path']);
     }
+    if (!isset($mayModify)) {
+        $mayModify = false;
+    }
     $event = !empty($row['Event']) ? ['Event' => $row['Event']] : false;
     $tags = Hash::extract($row, $field['data_path']);
     if (!empty($tags)) {
