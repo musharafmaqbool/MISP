@@ -885,12 +885,39 @@ class Correlation extends AppModel
         $page   = max(1, (int)($query['page'] ?? 1));
         $offset = $limit * ($page - 1);
 
-        $db = $this->getDataSource(); // CakePHP 2.x
-
         // Count occurrences of each value across value1 and value2.
         // Matches cover:
         //  a.value1 = b.value1, a.value1 = b.value2, a.value2 = b.value1, a.value2 = b.value2
         // by simply pooling both columns then GROUP BY.
+
+        $sql = "
+            WITH
+            top1 AS (
+                SELECT value1 AS val, COUNT(*) cnt
+                FROM attributes
+                WHERE deleted=0 AND disable_correlation=0 AND value1 <> ''
+                GROUP BY value1
+                ORDER BY cnt DESC
+                LIMIT " . intval($limit) . "
+            ),
+            top2 AS (
+                SELECT value2 AS val, COUNT(*) cnt
+                FROM attributes
+                WHERE deleted=0 AND disable_correlation=0 AND value2 <> ''
+                GROUP BY value2
+                ORDER BY cnt DESC
+                LIMIT " . intval($limit) . "
+            )
+            SELECT v.val, SUM(v.cnt) AS cnt
+            FROM (
+                SELECT * FROM top1
+                UNION ALL
+                SELECT * FROM top2
+            ) v
+            GROUP BY v.val
+            ORDER BY cnt DESC
+            LIMIT " . intval($limit);
+        /*
         $sql = "
             SELECT v.val AS value, COUNT(*) AS cnt
             FROM (
@@ -909,6 +936,7 @@ class Correlation extends AppModel
             GROUP BY v.val
             ORDER BY cnt DESC
             LIMIT " . intval($limit) . " OFFSET " . intval($offset);
+*/
         $rows = $this->query($sql);
         $rows = array_map (function ($row) {
             return [

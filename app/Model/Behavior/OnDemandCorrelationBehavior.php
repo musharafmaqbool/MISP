@@ -195,19 +195,20 @@ class OnDemandCorrelationBehavior extends ModelBehavior
                     continue;
                 }
                 $this->Correlation->query("
-                    CREATE TEMPORARY TABLE tmp_source_values (
-                        value2 VARCHAR(64) PRIMARY KEY
-                    ) ENGINE=MEMORY;");
+                CREATE TEMPORARY TABLE tmp_source_values (
+                    value2 VARCHAR(64) PRIMARY KEY,
+                    id INT(10) UNSIGNED NOT NULL
+                ) ENGINE=MEMORY;");
                 $this->Correlation->query("
-                        INSERT INTO tmp_source_values (value2)
-                        SELECT DISTINCT value2
-                        FROM attributes
+                        INSERT INTO tmp_source_values (value2, id)
+                        SELECT a.value2, a.id
+                        FROM attributes a
                         WHERE
-                            event_id = ? AND
-                            value2 != '' AND
-                            deleted = 0 AND
-                            disable_correlation = 0 AND
-                            type IN ('" . implode("','", $this->value2CorrelatingTypes) . "')
+                            a.event_id = ? AND
+                            a.value2 <> '' AND
+                            a.deleted = 0 AND
+                            a.disable_correlation = 0 AND
+                            a.type IN ('" . implode("','", $this->value2CorrelatingTypes) . "')
                     ",
                     [$eventId]
                 );
@@ -216,16 +217,15 @@ class OnDemandCorrelationBehavior extends ModelBehavior
                     SELECT 
                         target.id AS id,
                         target.event_id AS event_id,
-                        target.{$pair['b']} AS 'value',
+                        target.value2 AS 'value',
                         target.type,
-                        NULL AS source_id,
-                        NULL AS source_event_id
+                        source.id AS source_id
                     FROM attributes AS target " . $use_index . "
-                    JOIN tmp_source_values src
-                    ON target.value2 = src.value2
+                    JOIN tmp_source_values source
+                    ON target.value2 = source.value2
                     WHERE
                         target.event_id != ? AND
-                        target.value2 != '' AND
+                        target.value2 <> '' AND
                         target.deleted = 0 AND
                         target.disable_correlation = 0 AND
                         target.type IN ('" . implode("','", $this->value2CorrelatingTypes) . "')
@@ -246,12 +246,15 @@ class OnDemandCorrelationBehavior extends ModelBehavior
                         $corrValueCounts[$row['target']['value']] = 1;
                     }
                     if (
-                        $this->Correlation->CorrelationRule->checkEventIds($row['source']['source_event_id'], $row['target']['event_id']) &&
+                        $this->Correlation->CorrelationRule->checkEventIds($eventId, $row['target']['event_id']) &&
                         !$this->checkForExclusion($row['target']['value'])
                     ) {
                         $flat[] = array_merge(
                             $row['target'],
-                            ['source' => ['source_id' => null, 'source_event_id' => null]]
+                            [
+                                'source_id' => $row['source']['source_id'] ?? $row['source']['id'],
+                                'source_event_id' => $eventId
+                            ]
                         );
                     }
                 }
@@ -276,7 +279,6 @@ class OnDemandCorrelationBehavior extends ModelBehavior
                         target.id AS id,
                         target.event_id AS event_id,
                         source.id AS source_id,
-                        source.event_id AS source_event_id,
                         target.{$pair['b']} AS 'value',
                         target.type
                     FROM attributes AS source {$sourceIndex}
@@ -308,14 +310,14 @@ class OnDemandCorrelationBehavior extends ModelBehavior
 
                     // yeet correlations that would trip over correlation rules
                     if (
-                        $this->Correlation->CorrelationRule->checkEventIds($row['source']['source_event_id'], $row['target']['event_id']) &&
+                        $this->Correlation->CorrelationRule->checkEventIds($eventId, $row['target']['event_id']) &&
                         !$this->checkForExclusion($row['target']['value'])
                     ) {
                         $flat[] = array_merge(
                             $row['target'],
                             [
                                 'source_id' => $row['source']['source_id'] ?? $row['source']['id'],
-                                'source_event_id' => $row['source']['source_event_id'] ?? $row['source']['event_id']
+                                'source_event_id' => $eventId
                             ]
                         );
                     }
