@@ -1424,7 +1424,7 @@ class AppController extends Controller
                     unset($temp[$k]);
                     continue;
                 }
-                if (str_contains($temp_data, PHP_EOL)) {
+                if (!is_array($temp[$k]) && str_contains($temp_data, PHP_EOL)) {
                     $temp[$k] = explode(PHP_EOL, trim($temp_data));
                     $temp[$k] = array_map(function($element) {
                         return trim($element);
@@ -1456,7 +1456,6 @@ class AppController extends Controller
         }
         
         unset($filterData);
-
         $user = $this->_closeSession();
 
         if (isset($filters['returnFormat'])) {
