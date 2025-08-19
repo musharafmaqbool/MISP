@@ -14,7 +14,7 @@ echo $this->element('genericElements/Form/genericForm', [
             [
                 'field' => 'server_action',
                 'label' => __('Action'),
-                'options' => ['pull' => 'pull', 'push' => 'push', 'cache' => 'cache', 'periodic_summary' => 'periodic_summary'],
+                'options' => ['pull' => 'pull', 'push' => 'push', 'cache' => 'cache'],
                 'type' => 'dropdown',
                 'class' => 'span6',
                 'div' => ['id' => 'ServerAction', 'style' => 'display:none', 'class' => 'optionalField'],
