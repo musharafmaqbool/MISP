@@ -504,7 +504,14 @@ class Server extends AppModel
                     return false;
                 }
             }
-            $result = $eventModel->_add($event, true, $user, $server['Server']['org_id'], $passAlong, true, $jobId);
+            if(isset($event['Event']['protected']) && $event['Event']['protected'] && isset($event['Event']['CryptographicKey'][0])) {
+                $fingerprint = $event['Event']['CryptographicKey'][0]['fingerprint'];
+                $created_id = 0;
+                $validationIssues = array();
+                $result = $eventModel->_add($event, true, $user, $server['Server']['org_id'], $passAlong, true, $jobId, $created_id, $validationIssues, $fingerprint);
+            }else{
+                $result = $eventModel->_add($event, true, $user, $server['Server']['org_id'], $passAlong, true, $jobId);
+            }
             if ($result) {
                 $successes[] = $eventId;
                 if ($this->pubToZmq('event')) {
