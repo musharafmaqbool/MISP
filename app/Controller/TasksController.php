@@ -325,7 +325,10 @@ class TasksController extends AppController
         $dropdownData = [
             'users' => $this->User->find('list', [
                 'fields' => ['User.id', 'User.email'],
-                'conditions' => ['User.disabled' => 0],
+                'conditions' => [
+                    'User.disabled' => 0,
+                    'User.org_id' => $this->Auth->user('org_id')
+                ],
                 'order' => ['User.email' => 'ASC']
             ]),
             'servers' =>  ['all' => __('All Servers')] + $this->Server->find('list', [

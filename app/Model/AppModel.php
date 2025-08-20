@@ -738,6 +738,8 @@ class AppModel extends Model
                 }
                 break;
             case 'OnDemandCorrelationTuning':
+                $temp = "ALTER TABLE attributes";
+                $notEmpty = false;
                 $indeces = [
                     'idx_val1_source' => '(event_id, value1(64), deleted, disable_correlation, type, id)',
                     'idx_val1_target' => '(value1(64), event_id, deleted, disable_correlation, type, id)',
@@ -745,7 +747,7 @@ class AppModel extends Model
                     'idx_val2_target' => '(value2(64), event_id, deleted, disable_correlation, type, id)'
                 ];
                 foreach ($indeces as $index => $data) {
-                    if (!$this->checkNamedIndexExists('logs', $index)) {
+                    if (!$this->checkNamedIndexExists('attributes', $index)) {
                         $temp .= " ADD INDEX $index $data,";
                         $notEmpty = true;
                     }

@@ -44,6 +44,8 @@ class MispAttribute extends AppModel
 
     public $displayField = 'value';
 
+    private $orgs_cache = [];
+
     public $virtualFields = array(
             'value' => "CASE WHEN Attribute.value2 = '' THEN Attribute.value1 ELSE CONCAT(Attribute.value1, '|', Attribute.value2) END",
     );
@@ -1872,8 +1874,8 @@ class MispAttribute extends AppModel
 
         $default_fields = [
             'Attribute.*',
-            'Event.id','Event.info','Event.org_id','Event.orgc_id','Event.uuid','Event.user_id',
-            'Object.id','Object.distribution','Object.sharing_group_id'
+            'Event.id','Event.info','Event.org_id','Event.orgc_id','Event.uuid','Event.user_id','Event.threat_level_id', 'Event.distribution', 'Event.analysis', 'Event.date', 'Event.timestamp',
+            'Object.id','Object.distribution','Object.sharing_group_id', 'Object.timestamp'
         ];
         if (!empty($options['fields']) && is_array($options['fields'])) {
             $fields = array_merge($default_fields, $options['fields']);
@@ -1976,7 +1978,11 @@ class MispAttribute extends AppModel
         $all    = [];
         $skipped = 0;
         $eventTags = [];
-    
+        $threat_levels = $this->Event->ThreatLevel->find('all', [
+            'fields' => ['id', 'name'],
+            'recursive' => -1
+        ]);
+
         do {
             $batch = $this->find('all', $params);
             if (empty($batch)) {
@@ -2006,6 +2012,17 @@ class MispAttribute extends AppModel
                 if (!empty($options['includeContext'])) {
                     $attr['Event'] = $eventsById[$attr['Attribute']['event_id']];
                 }
+                foreach (['Org' => 'org_id', 'Orgc' => 'orgc_id'] as $event_org_field => $org_field) {
+                    if (empty($this->orgs_cache[$attr['Event'][$org_field]])) {
+                        $this->orgs_cache[$attr['Event'][$org_field]] = $this->Event->Org->find('first', [
+                            'conditions' => ['Org.id' => $attr['Event'][$org_field]],
+                            'fields' => ['id', 'name', 'uuid'],
+                            'recursive' => -1
+                        ]);
+                    }
+                    $attr['Event'][$event_org_field] = $this->orgs_cache[$attr['Event'][$org_field]]['Org'];
+                }
+                $attr['Event']['ThreatLevel'] = $threat_levels[$attr['Event']['threat_level_id']]['ThreatLevel'] ?? '';
                 if (!empty($options['includeSightings'])) {
                     $tmp = $attr['Attribute'];
                     $tmp['Event'] = $attr['Event'];
@@ -2080,7 +2097,6 @@ class MispAttribute extends AppModel
                 }
                 $all[] = $attr;
             }
-    
             // exit batching if done
             if ($loop && count($batch) < $params['limit']) {
                 break;
@@ -2769,6 +2785,7 @@ class MispAttribute extends AppModel
                             'attribute_id' => $this->id,
                             'event_id' => $eventId,
                             'tag_id' => $tag_id,
+                            'local' => !empty($tag['local']) ? $tag['local'] : 0,
                             'relationship_type' => empty($tag['relationship_type']) ? null : $tag['relationship_type']
                         ];
                         $this->AttributeTag->save($at);
